@@ -1,0 +1,7 @@
+providers = ["node"]
+
+[phases.install]
+cmds = ["cd backend && npm ci"]
+
+[start]
+cmd = "node backend/server.js"

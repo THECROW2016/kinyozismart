@@ -385,20 +385,20 @@
     <div class="hero">
       <div>
         <div class="hero-label">Today's Revenue</div>
-        <div class="hero-amount">KSh 24,500 <small>.00</small></div>
-        <div class="hero-delta">▲ 12% vs yesterday</div>
+        <div class="hero-amount" id="revenueAmount">KSh — <small></small></div>
+        <div class="hero-delta" id="revenueDelta">Loading…</div>
       </div>
       <div class="hero-stats">
         <div class="hero-stat">
-          <div class="n">18</div>
+          <div class="n" id="statServices">—</div>
           <div class="l">Services</div>
         </div>
         <div class="hero-stat">
-          <div class="n">14</div>
+          <div class="n" id="statCustomers">—</div>
           <div class="l">Customers</div>
         </div>
         <div class="hero-stat">
-          <div class="n">3</div>
+          <div class="n" id="statWaiting">—</div>
           <div class="l">Waiting</div>
         </div>
       </div>
@@ -418,11 +418,11 @@
           <div class="card-head">
             <span class="card-title">Top-Performing Barber</span>
           </div>
-          <div class="barber-card">
-            <div class="barber-avatar">KM</div>
+          <div class="barber-card" id="topBarberCard">
+            <div class="barber-avatar">—</div>
             <div>
-              <div class="barber-name">Kevin Mwangi</div>
-              <div class="barber-detail">9 services · KSh 8,200 today · 4.9★ rating</div>
+              <div class="barber-name">Loading…</div>
+              <div class="barber-detail"></div>
             </div>
           </div>
         </div>
@@ -432,17 +432,8 @@
             <span class="card-title">Low Stock</span>
             <span class="card-link">Restock</span>
           </div>
-          <div class="stock-row">
-            <span class="stock-name"><span class="stock-dot"></span>Pomade — Classic Hold</span>
-            <span class="stock-count">3 left</span>
-          </div>
-          <div class="stock-row">
-            <span class="stock-name"><span class="stock-dot"></span>Clipper oil</span>
-            <span class="stock-count">2 left</span>
-          </div>
-          <div class="stock-row">
-            <span class="stock-name"><span class="stock-dot"></span>Disposable razors</span>
-            <span class="stock-count">6 left</span>
+          <div id="lowStockList">
+            <div class="stock-row"><span class="stock-name">Loading…</span></div>
           </div>
         </div>
       </div>
@@ -453,40 +444,8 @@
             <span class="card-title">Waiting Bench</span>
             <span class="card-link">Add walk-in</span>
           </div>
-          <div class="queue-list">
-            <div class="queue-row">
-              <div class="queue-num">1</div>
-              <div class="queue-info">
-                <div class="queue-name">John Otieno</div>
-                <div class="queue-service">Fade + Beard trim</div>
-              </div>
-              <div class="queue-meta">
-                <div class="queue-barber">Kevin</div>
-                <div class="queue-wait">waiting 8 min</div>
-              </div>
-            </div>
-            <div class="queue-row">
-              <div class="queue-num">2</div>
-              <div class="queue-info">
-                <div class="queue-name">Brian Achieng</div>
-                <div class="queue-service">Haircut</div>
-              </div>
-              <div class="queue-meta">
-                <div class="queue-barber">Njoroge</div>
-                <div class="queue-wait">waiting 4 min</div>
-              </div>
-            </div>
-            <div class="queue-row">
-              <div class="queue-num">3</div>
-              <div class="queue-info">
-                <div class="queue-name">Wanjiru K.</div>
-                <div class="queue-service">Twist out</div>
-              </div>
-              <div class="queue-meta">
-                <div class="queue-barber">Faith</div>
-                <div class="queue-wait">just arrived</div>
-              </div>
-            </div>
+          <div class="queue-list" id="queueList">
+            <div class="queue-row"><div class="queue-info"><div class="queue-name">Loading…</div></div></div>
           </div>
         </div>
 
@@ -523,43 +482,142 @@
 </div>
 
 <script>
-  const ctx = document.getElementById('salesChart').getContext('2d');
+  const SHOP_ID = '11111111-1111-1111-1111-111111111111';
+  const API_BASE = window.location.origin + '/api';
   const chalk = '#F2ECDD';
   const chalkDim = '#B8B3A6';
   const amber = '#E8A33D';
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Thu','Fri','Sat','Sun','Mon','Tue','Wed'],
-      datasets: [{
-        data: [16200, 19800, 27400, 25100, 12300, 15900, 24500],
-        backgroundColor: (c) => {
-          const idx = c.dataIndex;
-          return idx === 6 ? amber : 'rgba(242,236,221,0.18)';
-        },
-        borderRadius: 4,
-        maxBarThickness: 28
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        backgroundColor: '#1B1B1D',
-        titleColor: chalk,
-        bodyColor: chalk,
-        borderColor: '#3A3936',
-        borderWidth: 1,
-        callbacks: {
-          label: (item) => 'KSh ' + item.raw.toLocaleString()
-        }
-      }},
-      scales: {
-        x: { grid: { display: false }, ticks: { color: chalkDim, font: { family: 'Inter', size: 11 } } },
-        y: { display: false, grid: { display: false } }
+
+  function fmtKsh(n) {
+    return 'KSh ' + Number(n).toLocaleString();
+  }
+
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    return mins <= 0 ? 'just arrived' : `waiting ${mins} min`;
+  }
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/summary?shop_id=${SHOP_ID}`);
+      const data = await res.json();
+
+      document.getElementById('revenueAmount').innerHTML = fmtKsh(data.revenue_today) + ' <small></small>';
+      const deltaEl = document.getElementById('revenueDelta');
+      if (data.revenue_pct_change_vs_yesterday === null) {
+        deltaEl.textContent = 'No sales yesterday to compare';
+      } else {
+        const up = data.revenue_pct_change_vs_yesterday >= 0;
+        deltaEl.textContent = `${up ? '▲' : '▼'} ${Math.abs(data.revenue_pct_change_vs_yesterday)}% vs yesterday`;
       }
+      document.getElementById('statServices').textContent = data.services_completed_today;
+      document.getElementById('statCustomers').textContent = data.customers_today;
+      document.getElementById('statWaiting').textContent = data.queue_waiting;
+
+      // Top barber
+      const barberCard = document.getElementById('topBarberCard');
+      if (data.top_barber) {
+        const initials = data.top_barber.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+        barberCard.innerHTML = `
+          <div class="barber-avatar">${initials}</div>
+          <div>
+            <div class="barber-name">${data.top_barber.full_name}</div>
+            <div class="barber-detail">${data.top_barber.services_count} services · ${fmtKsh(data.top_barber.revenue)} today</div>
+          </div>`;
+      } else {
+        barberCard.innerHTML = `<div class="barber-detail">No sales recorded yet today.</div>`;
+      }
+
+      // Low stock
+      const stockList = document.getElementById('lowStockList');
+      if (data.low_stock.length === 0) {
+        stockList.innerHTML = `<div class="stock-row"><span class="stock-name">All products well stocked</span></div>`;
+      } else {
+        stockList.innerHTML = data.low_stock.map(p => `
+          <div class="stock-row">
+            <span class="stock-name"><span class="stock-dot"></span>${p.name}</span>
+            <span class="stock-count">${p.stock_quantity} left</span>
+          </div>`).join('');
+      }
+
+      renderChart(data.sales_last_7_days);
+    } catch (err) {
+      console.error('Failed to load dashboard summary', err);
+      document.getElementById('revenueDelta').textContent = 'Could not reach backend';
     }
-  });
+  }
+
+  async function loadQueuePreview() {
+    try {
+      const res = await fetch(`${API_BASE}/queue?shop_id=${SHOP_ID}`);
+      const entries = await res.json();
+      const waiting = entries.filter(e => e.status !== 'in_service').slice(0, 4);
+      const list = document.getElementById('queueList');
+      if (waiting.length === 0) {
+        list.innerHTML = `<div class="queue-row"><div class="queue-info"><div class="queue-name">No one waiting right now</div></div></div>`;
+        return;
+      }
+      list.innerHTML = waiting.map(e => `
+        <div class="queue-row">
+          <div class="queue-num">${e.queue_number}</div>
+          <div class="queue-info">
+            <div class="queue-name">${e.customer_name}</div>
+            <div class="queue-service">${(e.services || []).join(' + ') || 'No services listed'}</div>
+          </div>
+          <div class="queue-meta">
+            <div class="queue-barber">${e.barber_name || 'Unassigned'}</div>
+            <div class="queue-wait">${e.status === 'called' ? 'called' : timeAgo(e.joined_at)}</div>
+          </div>
+        </div>`).join('');
+    } catch (err) {
+      console.error('Failed to load queue', err);
+    }
+  }
+
+  function renderChart(salesLast7Days) {
+    // Build a full 7-day label/value series, filling in zero for days with no sales
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    const byDay = Object.fromEntries((salesLast7Days || []).map(r => [r.day.slice(0, 10), Number(r.total)]));
+    const values = days.map(d => byDay[d] || 0);
+    const labels = days.map(d => new Date(d).toLocaleDateString('en-GB', { weekday: 'short' }));
+
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: (c) => c.dataIndex === values.length - 1 ? amber : 'rgba(242,236,221,0.18)',
+          borderRadius: 4,
+          maxBarThickness: 28
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: {
+          backgroundColor: '#1B1B1D', titleColor: chalk, bodyColor: chalk,
+          borderColor: '#3A3936', borderWidth: 1,
+          callbacks: { label: (item) => fmtKsh(item.raw) }
+        }},
+        scales: {
+          x: { grid: { display: false }, ticks: { color: chalkDim, font: { family: 'Inter', size: 11 } } },
+          y: { display: false, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  loadDashboard();
+  loadQueuePreview();
+  setInterval(loadQueuePreview, 15000); // refresh queue every 15s
 </script>
 
 </body>

@@ -132,132 +132,159 @@
       <button class="btn-add">+ Add Walk-In</button>
     </div>
 
-    <div class="stat-strip">
-      <div class="stat-chip"><span class="n">5</span><span class="l">Waiting</span></div>
-      <div class="stat-chip"><span class="n">3</span><span class="l">In Service</span></div>
-      <div class="stat-chip"><span class="n">11m</span><span class="l">Avg Wait Today</span></div>
-      <div class="stat-chip"><span class="n">4/4</span><span class="l">Barbers On Shift</span></div>
+    <div class="stat-strip" id="statStrip">
+      <div class="stat-chip"><span class="n" id="statWaitingCount">—</span><span class="l">Waiting</span></div>
+      <div class="stat-chip"><span class="n" id="statInServiceCount">—</span><span class="l">In Service</span></div>
+      <div class="stat-chip"><span class="n" id="statAvgWait">—</span><span class="l">Avg Wait Today</span></div>
     </div>
 
     <div class="columns">
-      <!-- Waiting -->
       <div>
         <div class="col-head">
           <span class="col-title">Waiting</span>
-          <span class="col-count">5</span>
+          <span class="col-count" id="countWaiting">0</span>
         </div>
-
-        <div class="ticket">
-          <div class="ticket-top">
-            <div class="ticket-num">4</div>
-            <div class="ticket-name">Peter Omondi</div>
-            <div class="ticket-wait">12 min</div>
-          </div>
-          <div class="ticket-service">Haircut + Hot Towel Shave</div>
-          <div class="ticket-barber"><span class="barber-dot" style="background:var(--chalk-dim);"></span>No preference</div>
-          <div class="ticket-actions">
-            <div class="tkt-btn primary">Assign Barber</div>
-          </div>
-        </div>
-
-        <div class="ticket">
-          <div class="ticket-top">
-            <div class="ticket-num">5</div>
-            <div class="ticket-name">Grace Wambui</div>
-            <div class="ticket-wait">6 min</div>
-          </div>
-          <div class="ticket-service">Twist Out</div>
-          <div class="ticket-barber"><span class="barber-dot"></span>Faith — free in ~10 min</div>
-          <div class="ticket-actions">
-            <div class="tkt-btn">Notify When Next</div>
-          </div>
-        </div>
-
-        <div class="ticket">
-          <div class="ticket-top">
-            <div class="ticket-num">6</div>
-            <div class="ticket-name">Samuel Kiptoo</div>
-            <div class="ticket-wait">2 min</div>
-          </div>
-          <div class="ticket-service">Kids Cut</div>
-          <div class="ticket-barber"><span class="barber-dot" style="background:var(--chalk-dim);"></span>No preference</div>
-          <div class="ticket-actions">
-            <div class="tkt-btn primary">Assign Barber</div>
-          </div>
-        </div>
+        <div id="colWaiting"></div>
       </div>
 
-      <!-- Called / Next -->
       <div>
         <div class="col-head">
           <span class="col-title">Called — Head to Chair</span>
-          <span class="col-count">1</span>
+          <span class="col-count" id="countCalled">0</span>
         </div>
-
-        <div class="ticket called">
-          <div class="ticket-top">
-            <div class="ticket-num">3</div>
-            <div class="ticket-name">Otieno Brian</div>
-            <div class="ticket-wait">now</div>
-          </div>
-          <div class="ticket-service">Haircut</div>
-          <div class="ticket-barber"><span class="barber-dot" style="background:var(--amber);"></span>Njoroge — SMS sent</div>
-          <div class="ticket-actions">
-            <div class="tkt-btn primary">Start Service</div>
-          </div>
-        </div>
-
-        <div class="empty">Next customer will appear here once a barber goes free.</div>
+        <div id="colCalled"></div>
       </div>
 
-      <!-- In Service -->
       <div>
         <div class="col-head">
           <span class="col-title">In Service</span>
-          <span class="col-count">3</span>
+          <span class="col-count" id="countInService">0</span>
         </div>
-
-        <div class="ticket in-service">
-          <div class="ticket-top">
-            <div class="ticket-num">1</div>
-            <div class="ticket-name">John Otieno</div>
-            <div class="ticket-wait">6 min elapsed</div>
-          </div>
-          <div class="ticket-service">Fade + Beard Trim</div>
-          <div class="ticket-barber"><span class="barber-dot" style="background:var(--barber-blue);"></span>Kevin</div>
-          <div class="ticket-actions">
-            <div class="tkt-btn primary blue">Complete → POS</div>
-          </div>
-        </div>
-
-        <div class="ticket in-service">
-          <div class="ticket-top">
-            <div class="ticket-num">2</div>
-            <div class="ticket-name">Mary Njeri</div>
-            <div class="ticket-wait">3 min elapsed</div>
-          </div>
-          <div class="ticket-service">Braids</div>
-          <div class="ticket-barber"><span class="barber-dot" style="background:var(--barber-blue);"></span>Faith</div>
-          <div class="ticket-actions">
-            <div class="tkt-btn primary blue">Complete → POS</div>
-          </div>
-        </div>
-
-        <div class="ticket in-service">
-          <div class="ticket-top">
-            <div class="ticket-num">0</div>
-            <div class="ticket-name">Dennis Kamau</div>
-            <div class="ticket-wait">14 min elapsed</div>
-          </div>
-          <div class="ticket-service">Dye + Haircut</div>
-          <div class="ticket-barber"><span class="barber-dot" style="background:var(--barber-blue);"></span>Brian</div>
-          <div class="ticket-actions">
-            <div class="tkt-btn primary blue">Complete → POS</div>
-          </div>
-        </div>
+        <div id="colInService"></div>
       </div>
     </div>
   </main>
 </div>
+
+<!-- Add walk-in modal -->
+<div id="walkInModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:50;">
+  <div style="background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:14px;padding:24px;width:340px;max-width:90vw;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.5px;margin-bottom:16px;">Add Walk-In</div>
+    <label style="font-size:11.5px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.5px;">Customer name</label>
+    <input id="wiName" style="width:100%;margin:6px 0 14px;padding:10px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:14px;" placeholder="e.g. James Mwangi">
+    <label style="font-size:11.5px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.5px;">Phone (optional)</label>
+    <input id="wiPhone" style="width:100%;margin:6px 0 14px;padding:10px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:14px;" placeholder="07XX XXX XXX">
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button onclick="closeWalkInModal()" style="flex:1;padding:11px;border-radius:8px;background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk-dim);cursor:pointer;">Cancel</button>
+      <button onclick="submitWalkIn()" style="flex:1;padding:11px;border-radius:8px;background:var(--amber);border:none;color:var(--ink);font-weight:700;cursor:pointer;">Add to Queue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SHOP_ID = '11111111-1111-1111-1111-111111111111';
+  const API_BASE = window.location.origin + '/api';
+
+  function timeSince(iso) {
+    if (!iso) return '';
+    const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    return mins <= 0 ? 'just now' : `${mins} min`;
+  }
+
+  function ticketHTML(e, columnType) {
+    const services = (e.services || []).join(' + ') || 'No services listed';
+    let actionsHTML = '';
+    if (columnType === 'waiting') {
+      actionsHTML = `<div class="tkt-btn primary" onclick="callCustomer('${e.id}')">Call to Chair</div>`;
+    } else if (columnType === 'called') {
+      actionsHTML = `<div class="tkt-btn primary" onclick="startService('${e.id}')">Start Service</div>`;
+    } else if (columnType === 'in_service') {
+      actionsHTML = `<div class="tkt-btn primary blue" onclick="window.location.href='pos.html?queue_entry=${e.id}'">Complete → POS</div>`;
+    }
+    const cls = columnType === 'called' ? 'called' : (columnType === 'in_service' ? 'in-service' : '');
+    return `
+      <div class="ticket ${cls}">
+        <div class="ticket-top">
+          <div class="ticket-num">${e.queue_number}</div>
+          <div class="ticket-name">${e.customer_name}</div>
+          <div class="ticket-wait">${timeSince(e.joined_at)}</div>
+        </div>
+        <div class="ticket-service">${services}</div>
+        <div class="ticket-barber"><span class="barber-dot" style="background:${e.barber_name ? 'var(--barber-blue)' : 'var(--chalk-dim)'};"></span>${e.barber_name || 'No preference'}</div>
+        <div class="ticket-actions">${actionsHTML}</div>
+      </div>`;
+  }
+
+  async function loadQueue() {
+    try {
+      const res = await fetch(`${API_BASE}/queue?shop_id=${SHOP_ID}`);
+      const entries = await res.json();
+
+      const waiting = entries.filter(e => e.status === 'waiting');
+      const called = entries.filter(e => e.status === 'called');
+      const inService = entries.filter(e => e.status === 'in_service');
+
+      document.getElementById('colWaiting').innerHTML = waiting.length
+        ? waiting.map(e => ticketHTML(e, 'waiting')).join('')
+        : '<div class="empty">No one waiting right now.</div>';
+      document.getElementById('colCalled').innerHTML = called.length
+        ? called.map(e => ticketHTML(e, 'called')).join('')
+        : '<div class="empty">Next customer will appear here once a barber goes free.</div>';
+      document.getElementById('colInService').innerHTML = inService.length
+        ? inService.map(e => ticketHTML(e, 'in_service')).join('')
+        : '<div class="empty">No one currently in a chair.</div>';
+
+      document.getElementById('countWaiting').textContent = waiting.length;
+      document.getElementById('countCalled').textContent = called.length;
+      document.getElementById('countInService').textContent = inService.length;
+      document.getElementById('statWaitingCount').textContent = waiting.length + called.length;
+      document.getElementById('statInServiceCount').textContent = inService.length;
+
+      if (waiting.length) {
+        const avgMins = Math.round(
+          waiting.reduce((sum, e) => sum + (Date.now() - new Date(e.joined_at).getTime()) / 60000, 0) / waiting.length
+        );
+        document.getElementById('statAvgWait').textContent = avgMins + 'm';
+      } else {
+        document.getElementById('statAvgWait').textContent = '0m';
+      }
+    } catch (err) {
+      console.error('Failed to load queue', err);
+    }
+  }
+
+  async function callCustomer(id) {
+    await fetch(`${API_BASE}/queue/${id}/call`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({}) });
+    loadQueue();
+  }
+  async function startService(id) {
+    await fetch(`${API_BASE}/queue/${id}/start`, { method: 'PATCH' });
+    loadQueue();
+  }
+
+  function openWalkInModal() { document.getElementById('walkInModal').style.display = 'flex'; }
+  function closeWalkInModal() {
+    document.getElementById('walkInModal').style.display = 'none';
+    document.getElementById('wiName').value = '';
+    document.getElementById('wiPhone').value = '';
+  }
+  async function submitWalkIn() {
+    const name = document.getElementById('wiName').value.trim();
+    const phone = document.getElementById('wiPhone').value.trim();
+    if (!name) return;
+    await fetch(`${API_BASE}/queue`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop_id: SHOP_ID, customer_name: name, phone: phone || undefined, service_ids: [] })
+    });
+    closeWalkInModal();
+    loadQueue();
+  }
+
+  document.querySelector('.btn-add').addEventListener('click', openWalkInModal);
+
+  loadQueue();
+  setInterval(loadQueue, 8000);
+</script>
 </body>
 </html>
