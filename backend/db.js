@@ -8,7 +8,9 @@ const pool = new Pool({
   database: process.env.PGDATABASE || 'barberos',
   // Railway's managed Postgres provides a single DATABASE_URL — prefer it when present
   connectionString: process.env.DATABASE_URL || undefined,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  // Only use SSL when explicitly requested (e.g. connecting to a public/managed
+  // Postgres that requires it). Railway's private network does not need it.
+  ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false
 });
 
 module.exports = pool;
