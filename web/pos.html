@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BarberOS — New Sale</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1B1D; --ink-raised:#242426; --ink-line:#3A3936;
+    --chalk:#F2ECDD; --chalk-dim:#B8B3A6;
+    --barber-red:#C8352E; --barber-blue:#2C4A7C;
+    --amber:#E8A33D; --amber-dim:#8A6428;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--ink);color:var(--chalk);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .app{display:grid;grid-template-columns:76px 1fr;min-height:100vh;}
+
+  .rail{
+    position:relative;
+    background:repeating-linear-gradient(-45deg, var(--barber-red) 0 18px, var(--chalk) 18px 36px, var(--barber-blue) 36px 54px, var(--chalk) 54px 72px);
+    background-size:200% 200%;
+    animation:pole 14s linear infinite;
+    display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px;
+  }
+  @keyframes pole{from{background-position:0 0;}to{background-position:0 220px;}}
+  @media (prefers-reduced-motion: reduce){.rail{animation:none;}}
+  .rail::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(27,27,29,.15), rgba(27,27,29,.55) 60%, rgba(27,27,29,.85));}
+  .rail-logo{position:relative;z-index:1;width:40px;height:40px;border-radius:50%;background:var(--ink);border:2px solid var(--chalk);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;margin-bottom:18px;flex-shrink:0;}
+  .rail-nav{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;}
+  .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--chalk);cursor:pointer;transition:background .15s ease;}
+  .rail-item:hover{background:rgba(27,27,29,.5);}
+  .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
+
+  main{padding:28px 36px 60px;max-width:1280px;}
+
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+  .shop-name{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;}
+  .shop-sub{color:var(--chalk-dim);font-size:13px;margin-top:4px;}
+  .date-txt{color:var(--chalk-dim);font-size:13px;font-family:'IBM Plex Mono',monospace;}
+
+  .pos-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:start;}
+
+  .card{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:20px 22px;}
+  .card-title{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;color:var(--chalk-dim);font-weight:600;margin-bottom:14px;}
+
+  /* Step selectors */
+  .field{margin-bottom:18px;}
+  .field-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--chalk-dim);margin-bottom:8px;font-weight:600;}
+  .select-box{
+    width:100%;background:var(--ink);border:1px solid var(--ink-line);border-radius:10px;
+    padding:11px 14px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:14px;
+    display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+  }
+  .select-box .arrow{color:var(--chalk-dim);font-size:11px;}
+  .pill-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .pill{
+    border:1px solid var(--ink-line);border-radius:999px;padding:8px 14px;font-size:13px;
+    cursor:pointer;color:var(--chalk-dim);background:var(--ink);transition:all .15s ease;
+  }
+  .pill.selected{border-color:var(--amber);color:var(--amber);background:rgba(232,163,61,.1);}
+  .pill .price{font-family:'IBM Plex Mono',monospace;font-size:11.5px;margin-left:6px;opacity:.8;}
+
+  .product-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--ink-line);}
+  .product-row:last-child{border-bottom:none;}
+  .product-name{font-size:13.5px;}
+  .product-stock{font-size:11px;color:var(--chalk-dim);margin-top:1px;}
+  .qty-control{display:flex;align-items:center;gap:10px;}
+  .qty-btn{width:26px;height:26px;border-radius:6px;background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .qty-val{font-family:'IBM Plex Mono',monospace;font-size:13px;width:16px;text-align:center;}
+
+  /* Right column: receipt/summary */
+  .summary-card{position:sticky;top:20px;}
+  .cust-preview{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed var(--ink-line);}
+  .cust-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, var(--barber-red), var(--amber));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--ink);flex-shrink:0;}
+  .cust-name{font-size:13.5px;font-weight:700;}
+  .cust-meta{font-size:11.5px;color:var(--chalk-dim);}
+
+  .line{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;}
+  .line-label{color:var(--chalk-dim);}
+  .line-val{font-family:'IBM Plex Mono',monospace;}
+  .divider{border:none;border-top:1px dashed var(--ink-line);margin:10px 0;}
+  .total-line{display:flex;justify-content:space-between;align-items:baseline;padding-top:6px;}
+  .total-label{font-size:13px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.6px;}
+  .total-val{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;color:var(--amber);}
+
+  .discount-row{display:flex;gap:8px;margin:14px 0;}
+  .discount-input{
+    flex:1;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;
+    padding:9px 12px;color:var(--chalk);font-size:13px;font-family:'IBM Plex Mono',monospace;
+  }
+  .discount-input::placeholder{color:var(--chalk-dim);}
+
+  .pay-tabs{display:flex;gap:8px;margin:16px 0;}
+  .pay-tab{
+    flex:1;text-align:center;padding:12px 8px;border-radius:10px;border:1px solid var(--ink-line);
+    font-size:12.5px;font-weight:600;cursor:pointer;color:var(--chalk-dim);background:var(--ink);
+  }
+  .pay-tab.active{border-color:var(--amber);color:var(--amber);background:rgba(232,163,61,.1);}
+
+  .btn-primary{
+    width:100%;background:var(--amber);color:var(--ink);border:none;border-radius:10px;
+    padding:14px;font-size:14.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;margin-top:6px;
+  }
+  .btn-secondary{
+    width:100%;background:transparent;color:var(--chalk-dim);border:1px solid var(--ink-line);border-radius:10px;
+    padding:11px;font-size:13px;cursor:pointer;margin-top:8px;
+  }
+
+  @media (max-width:900px){
+    .app{grid-template-columns:60px 1fr;}
+    main{padding:22px 16px 50px;}
+    .pos-grid{grid-template-columns:1fr;}
+    .summary-card{position:static;}
+  }
+  :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Main navigation">
+    <div class="rail-logo">BO</div>
+    <div class="rail-nav">
+      <div class="rail-item" title="Dashboard">▦</div>
+      <div class="rail-item active" title="POS / New Sale">✂</div>
+      <div class="rail-item" title="Appointments">📅</div>
+      <div class="rail-item" title="Queue">☰</div>
+      <div class="rail-item" title="Customers">👤</div>
+      <div class="rail-item" title="Staff">👥</div>
+      <div class="rail-item" title="Inventory">📦</div>
+      <div class="rail-item" title="Reports">📈</div>
+      <div class="rail-item" title="Settings">⚙</div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <div class="shop-name">NEW SALE</div>
+        <div class="shop-sub">Kinyozi Ndogo · Ronald Ngala St, Nairobi</div>
+      </div>
+      <div class="date-txt">Ticket from Queue #1 — John Otieno</div>
+    </div>
+
+    <div class="pos-grid">
+      <div>
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-title">Customer &amp; Barber</div>
+          <div class="field">
+            <div class="field-label">Customer</div>
+            <div class="select-box">John Otieno · 0712 345 678 <span class="arrow">▾</span></div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <div class="field-label">Barber</div>
+            <div class="select-box">Kevin Mwangi <span class="arrow">▾</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-title">Services</div>
+          <div class="pill-row">
+            <div class="pill selected">Fade Haircut <span class="price">KSh 500</span></div>
+            <div class="pill selected">Beard Trim <span class="price">KSh 300</span></div>
+            <div class="pill">Hot Towel Shave <span class="price">KSh 350</span></div>
+            <div class="pill">Kids Cut <span class="price">KSh 350</span></div>
+            <div class="pill">Braids <span class="price">KSh 1,200</span></div>
+            <div class="pill">Dye / Color <span class="price">KSh 800</span></div>
+            <div class="pill">Twist Out <span class="price">KSh 700</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Add Products</div>
+          <div class="product-row">
+            <div>
+              <div class="product-name">Pomade — Classic Hold</div>
+              <div class="product-stock">3 left in stock</div>
+            </div>
+            <div class="qty-control">
+              <div class="qty-btn">−</div><div class="qty-val">1</div><div class="qty-btn">+</div>
+            </div>
+          </div>
+          <div class="product-row">
+            <div>
+              <div class="product-name">Beard Oil</div>
+              <div class="product-stock">14 left in stock</div>
+            </div>
+            <div class="qty-control">
+              <div class="qty-btn">−</div><div class="qty-val">0</div><div class="qty-btn">+</div>
+            </div>
+          </div>
+          <div class="product-row">
+            <div>
+              <div class="product-name">Disposable Razors (pack)</div>
+              <div class="product-stock">6 left in stock</div>
+            </div>
+            <div class="qty-control">
+              <div class="qty-btn">−</div><div class="qty-val">0</div><div class="qty-btn">+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card summary-card">
+        <div class="cust-preview">
+          <div class="cust-avatar">JO</div>
+          <div>
+            <div class="cust-name">John Otieno</div>
+            <div class="cust-meta">6th visit · 240 loyalty pts</div>
+          </div>
+        </div>
+
+        <div class="line"><span class="line-label">Fade Haircut</span><span class="line-val">KSh 500</span></div>
+        <div class="line"><span class="line-label">Beard Trim</span><span class="line-val">KSh 300</span></div>
+        <div class="line"><span class="line-label">Pomade × 1</span><span class="line-val">KSh 450</span></div>
+        <hr class="divider">
+        <div class="line"><span class="line-label">Subtotal</span><span class="line-val">KSh 1,250</span></div>
+
+        <div class="discount-row">
+          <input class="discount-input" placeholder="Discount code / %" />
+        </div>
+
+        <div class="pay-tabs">
+          <div class="pay-tab active">M-Pesa</div>
+          <div class="pay-tab">Cash</div>
+          <div class="pay-tab">Card</div>
+          <div class="pay-tab">Split</div>
+        </div>
+
+        <hr class="divider">
+        <div class="total-line">
+          <span class="total-label">Total Due</span>
+          <span class="total-val">KSh 1,250</span>
+        </div>
+
+        <button class="btn-primary">Send M-Pesa STK Push</button>
+        <button class="btn-secondary">Generate Receipt</button>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

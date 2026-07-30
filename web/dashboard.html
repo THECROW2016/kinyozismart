@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BarberOS — Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#1B1B1D;
+    --ink-raised:#242426;
+    --ink-line:#3A3936;
+    --chalk:#F2ECDD;
+    --chalk-dim:#B8B3A6;
+    --barber-red:#C8352E;
+    --barber-blue:#2C4A7C;
+    --amber:#E8A33D;
+    --amber-dim:#8A6428;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    display:grid;
+    grid-template-columns:76px 1fr;
+    min-height:100vh;
+  }
+
+  /* ---------- Signature: barber-pole nav rail ---------- */
+  .rail{
+    position:relative;
+    background:repeating-linear-gradient(
+      -45deg,
+      var(--barber-red) 0 18px,
+      var(--chalk) 18px 36px,
+      var(--barber-blue) 36px 54px,
+      var(--chalk) 54px 72px
+    );
+    background-size:200% 200%;
+    animation:pole 14s linear infinite;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 0;
+    gap:6px;
+  }
+  @keyframes pole{
+    from{background-position:0 0;}
+    to{background-position:0 220px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .rail{animation:none;}
+  }
+  .rail::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg, rgba(27,27,29,.15), rgba(27,27,29,.55) 60%, rgba(27,27,29,.85));
+  }
+  .rail-logo{
+    position:relative;
+    z-index:1;
+    width:40px;height:40px;
+    border-radius:50%;
+    background:var(--ink);
+    border:2px solid var(--chalk);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Bebas Neue',sans-serif;
+    font-size:15px;
+    letter-spacing:0.5px;
+    margin-bottom:18px;
+    flex-shrink:0;
+  }
+  .rail-nav{
+    position:relative;
+    z-index:1;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    width:100%;
+    align-items:center;
+  }
+  .rail-item{
+    width:44px;height:44px;
+    border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;
+    background:transparent;
+    color:var(--chalk);
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .rail-item:hover{background:rgba(27,27,29,.5);}
+  .rail-item.active{
+    background:var(--ink);
+    box-shadow:0 0 0 1.5px var(--amber);
+  }
+  .rail-item .tip{
+    display:none;
+  }
+
+  /* ---------- Main ---------- */
+  main{
+    padding:28px 36px 60px;
+    max-width:1280px;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:28px;
+  }
+  .shop-name{
+    font-family:'Bebas Neue',sans-serif;
+    font-size:34px;
+    letter-spacing:1px;
+    line-height:1;
+  }
+  .shop-sub{
+    color:var(--chalk-dim);
+    font-size:13px;
+    margin-top:4px;
+  }
+  .topbar-right{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(232,163,61,.12);
+    color:var(--amber);
+    border:1px solid rgba(232,163,61,.4);
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.4px;
+  }
+  .status-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 0 3px rgba(232,163,61,.2);
+  }
+  .date-txt{color:var(--chalk-dim);font-size:13px;font-family:'IBM Plex Mono',monospace;}
+
+  /* Hero */
+  .hero{
+    background:var(--ink-raised);
+    border:1px solid var(--ink-line);
+    border-radius:var(--radius);
+    padding:26px 28px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:20px;
+    margin-bottom:20px;
+  }
+  .hero-label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+    color:var(--chalk-dim);
+    margin-bottom:10px;
+  }
+  .hero-amount{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:46px;
+    color:var(--chalk);
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .hero-amount small{font-size:20px;color:var(--chalk-dim);font-weight:500;}
+  .hero-delta{
+    margin-top:10px;
+    font-size:13px;
+    color:var(--amber);
+    font-weight:600;
+  }
+  .hero-stats{
+    display:flex;
+    gap:28px;
+    align-self:center;
+  }
+  .hero-stat{text-align:right;}
+  .hero-stat .n{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:24px;
+    font-weight:600;
+  }
+  .hero-stat .l{
+    font-size:11.5px;
+    color:var(--chalk-dim);
+    margin-top:2px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+  }
+
+  /* Grid of cards */
+  .grid{
+    display:grid;
+    grid-template-columns:1.4fr 1fr;
+    gap:20px;
+  }
+  .col{display:flex;flex-direction:column;gap:20px;}
+  .card{
+    background:var(--ink-raised);
+    border:1px solid var(--ink-line);
+    border-radius:var(--radius);
+    padding:20px 22px;
+  }
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .card-title{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1.1px;
+    color:var(--chalk-dim);
+    font-weight:600;
+  }
+  .card-link{
+    font-size:12px;
+    color:var(--amber);
+    cursor:pointer;
+  }
+
+  /* Chart */
+  .chart-wrap{height:190px;}
+
+  /* Queue */
+  .queue-list{display:flex;flex-direction:column;gap:0;}
+  .queue-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:11px 0;
+    border-bottom:1px dashed var(--ink-line);
+  }
+  .queue-row:last-child{border-bottom:none;}
+  .queue-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--ink);
+    background:var(--amber);
+    width:26px;height:26px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .queue-info{flex:1;min-width:0;}
+  .queue-name{font-size:13.5px;font-weight:600;}
+  .queue-service{font-size:12px;color:var(--chalk-dim);margin-top:1px;}
+  .queue-meta{text-align:right;flex-shrink:0;}
+  .queue-barber{font-size:12px;color:var(--chalk-dim);}
+  .queue-wait{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:var(--barber-red);
+    margin-top:2px;
+  }
+
+  /* Low stock */
+  .stock-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:9px 0;
+    border-bottom:1px dashed var(--ink-line);
+    font-size:13px;
+  }
+  .stock-row:last-child{border-bottom:none;}
+  .stock-name{display:flex;align-items:center;gap:9px;}
+  .stock-dot{width:7px;height:7px;border-radius:50%;background:var(--barber-red);flex-shrink:0;}
+  .stock-count{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--barber-red);
+    font-size:12.5px;
+  }
+
+  /* Appointments */
+  .appt-row{
+    display:flex;
+    gap:12px;
+    padding:9px 0;
+    border-bottom:1px dashed var(--ink-line);
+    align-items:baseline;
+  }
+  .appt-row:last-child{border-bottom:none;}
+  .appt-time{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:var(--barber-blue);
+    background:rgba(44,74,124,.18);
+    padding:3px 7px;
+    border-radius:6px;
+    flex-shrink:0;
+  }
+  .appt-name{font-size:13.5px;font-weight:600;}
+  .appt-service{font-size:12px;color:var(--chalk-dim);}
+
+  /* Top barber */
+  .barber-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .barber-avatar{
+    width:46px;height:46px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--barber-red), var(--amber));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Bebas Neue',sans-serif;
+    font-size:18px;
+    color:var(--ink);
+    flex-shrink:0;
+  }
+  .barber-name{font-weight:700;font-size:14.5px;}
+  .barber-detail{font-size:12px;color:var(--chalk-dim);margin-top:2px;}
+
+  @media (max-width:860px){
+    .app{grid-template-columns:60px 1fr;}
+    main{padding:22px 16px 50px;}
+    .grid{grid-template-columns:1fr;}
+    .hero{grid-template-columns:1fr;}
+    .hero-stats{align-self:flex-start;gap:20px;}
+  }
+
+  :focus-visible{
+    outline:2px solid var(--amber);
+    outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <nav class="rail" aria-label="Main navigation">
+    <div class="rail-logo">BO</div>
+    <div class="rail-nav">
+      <div class="rail-item active" title="Dashboard">▦</div>
+      <div class="rail-item" title="POS / New Sale">✂</div>
+      <div class="rail-item" title="Appointments">📅</div>
+      <div class="rail-item" title="Queue">☰</div>
+      <div class="rail-item" title="Customers">👤</div>
+      <div class="rail-item" title="Staff">👥</div>
+      <div class="rail-item" title="Inventory">📦</div>
+      <div class="rail-item" title="Reports">📈</div>
+      <div class="rail-item" title="Settings">⚙</div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <div class="shop-name">KINYOZI NDOGO</div>
+        <div class="shop-sub">Ronald Ngala St, Nairobi CBD</div>
+      </div>
+      <div class="topbar-right">
+        <span class="status-pill"><span class="status-dot"></span>OPEN</span>
+        <span class="date-txt">Thu, 30 Jul 2026 · 3:42 PM</span>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <div class="hero-label">Today's Revenue</div>
+        <div class="hero-amount">KSh 24,500 <small>.00</small></div>
+        <div class="hero-delta">▲ 12% vs yesterday</div>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="n">18</div>
+          <div class="l">Services</div>
+        </div>
+        <div class="hero-stat">
+          <div class="n">14</div>
+          <div class="l">Customers</div>
+        </div>
+        <div class="hero-stat">
+          <div class="n">3</div>
+          <div class="l">Waiting</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="col">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Sales — Last 7 Days</span>
+            <span class="card-link">View report</span>
+          </div>
+          <div class="chart-wrap"><canvas id="salesChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Top-Performing Barber</span>
+          </div>
+          <div class="barber-card">
+            <div class="barber-avatar">KM</div>
+            <div>
+              <div class="barber-name">Kevin Mwangi</div>
+              <div class="barber-detail">9 services · KSh 8,200 today · 4.9★ rating</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Low Stock</span>
+            <span class="card-link">Restock</span>
+          </div>
+          <div class="stock-row">
+            <span class="stock-name"><span class="stock-dot"></span>Pomade — Classic Hold</span>
+            <span class="stock-count">3 left</span>
+          </div>
+          <div class="stock-row">
+            <span class="stock-name"><span class="stock-dot"></span>Clipper oil</span>
+            <span class="stock-count">2 left</span>
+          </div>
+          <div class="stock-row">
+            <span class="stock-name"><span class="stock-dot"></span>Disposable razors</span>
+            <span class="stock-count">6 left</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Waiting Bench</span>
+            <span class="card-link">Add walk-in</span>
+          </div>
+          <div class="queue-list">
+            <div class="queue-row">
+              <div class="queue-num">1</div>
+              <div class="queue-info">
+                <div class="queue-name">John Otieno</div>
+                <div class="queue-service">Fade + Beard trim</div>
+              </div>
+              <div class="queue-meta">
+                <div class="queue-barber">Kevin</div>
+                <div class="queue-wait">waiting 8 min</div>
+              </div>
+            </div>
+            <div class="queue-row">
+              <div class="queue-num">2</div>
+              <div class="queue-info">
+                <div class="queue-name">Brian Achieng</div>
+                <div class="queue-service">Haircut</div>
+              </div>
+              <div class="queue-meta">
+                <div class="queue-barber">Njoroge</div>
+                <div class="queue-wait">waiting 4 min</div>
+              </div>
+            </div>
+            <div class="queue-row">
+              <div class="queue-num">3</div>
+              <div class="queue-info">
+                <div class="queue-name">Wanjiru K.</div>
+                <div class="queue-service">Twist out</div>
+              </div>
+              <div class="queue-meta">
+                <div class="queue-barber">Faith</div>
+                <div class="queue-wait">just arrived</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Upcoming Appointments</span>
+            <span class="card-link">Calendar</span>
+          </div>
+          <div class="appt-row">
+            <span class="appt-time">4:30</span>
+            <div>
+              <div class="appt-name">Mary Njeri</div>
+              <div class="appt-service">Braids — with Faith</div>
+            </div>
+          </div>
+          <div class="appt-row">
+            <span class="appt-time">5:00</span>
+            <div>
+              <div class="appt-name">Dennis Kamau</div>
+              <div class="appt-service">Haircut + Shave — with Kevin</div>
+            </div>
+          </div>
+          <div class="appt-row">
+            <span class="appt-time">5:45</span>
+            <div>
+              <div class="appt-name">Peter Omondi</div>
+              <div class="appt-service">Kids cut — with Njoroge</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const ctx = document.getElementById('salesChart').getContext('2d');
+  const chalk = '#F2ECDD';
+  const chalkDim = '#B8B3A6';
+  const amber = '#E8A33D';
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Thu','Fri','Sat','Sun','Mon','Tue','Wed'],
+      datasets: [{
+        data: [16200, 19800, 27400, 25100, 12300, 15900, 24500],
+        backgroundColor: (c) => {
+          const idx = c.dataIndex;
+          return idx === 6 ? amber : 'rgba(242,236,221,0.18)';
+        },
+        borderRadius: 4,
+        maxBarThickness: 28
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1B1B1D',
+        titleColor: chalk,
+        bodyColor: chalk,
+        borderColor: '#3A3936',
+        borderWidth: 1,
+        callbacks: {
+          label: (item) => 'KSh ' + item.raw.toLocaleString()
+        }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: chalkDim, font: { family: 'Inter', size: 11 } } },
+        y: { display: false, grid: { display: false } }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
