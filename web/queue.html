@@ -32,9 +32,17 @@
   .rail::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(27,27,29,.15), rgba(27,27,29,.55) 60%, rgba(27,27,29,.85));}
   .rail-logo{position:relative;z-index:1;width:40px;height:40px;border-radius:50%;background:var(--ink);border:2px solid var(--chalk);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;margin-bottom:18px;flex-shrink:0;}
   .rail-nav{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;}
-  .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--chalk);cursor:pointer;transition:background .15s ease;}
+  .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--chalk);cursor:pointer;text-decoration:none;transition:background .15s ease;}
   .rail-item:hover{background:rgba(27,27,29,.5);}
   .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
+  .rail-toast{
+    position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk);
+    padding:12px 20px;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .2s ease, transform .2s ease;
+    pointer-events:none;z-index:100;
+  }
+  .rail-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   main{padding:28px 36px 60px;max-width:1280px;}
 
@@ -111,17 +119,18 @@
   <nav class="rail" aria-label="Main navigation">
     <div class="rail-logo">BO</div>
     <div class="rail-nav">
-      <div class="rail-item" title="Dashboard">▦</div>
-      <div class="rail-item" title="POS / New Sale">✂</div>
-      <div class="rail-item" title="Appointments">📅</div>
-      <div class="rail-item active" title="Queue">☰</div>
-      <div class="rail-item" title="Customers">👤</div>
-      <div class="rail-item" title="Staff">👥</div>
-      <div class="rail-item" title="Inventory">📦</div>
-      <div class="rail-item" title="Reports">📈</div>
-      <div class="rail-item" title="Settings">⚙</div>
+      <a class="rail-item" href="dashboard.html" title="Dashboard">▦</a>
+      <a class="rail-item" href="pos.html" title="POS / New Sale">✂</a>
+      <div class="rail-item" title="Appointments" onclick="comingSoon('Appointments')">📅</div>
+      <a class="rail-item active" href="queue.html" title="Queue">☰</a>
+      <div class="rail-item" title="Customers" onclick="comingSoon('Customers')">👤</div>
+      <div class="rail-item" title="Staff" onclick="comingSoon('Staff')">👥</div>
+      <div class="rail-item" title="Inventory" onclick="comingSoon('Inventory')">📦</div>
+      <div class="rail-item" title="Reports" onclick="comingSoon('Reports')">📈</div>
+      <div class="rail-item" title="Settings" onclick="comingSoon('Settings')">⚙</div>
     </div>
   </nav>
+  <div class="rail-toast" id="railToast"></div>
 
   <main>
     <div class="topbar">
@@ -285,6 +294,15 @@
 
   loadQueue();
   setInterval(loadQueue, 8000);
+
+  let toastTimer;
+  function comingSoon(feature) {
+    const toast = document.getElementById('railToast');
+    toast.textContent = `${feature} isn't built yet — Dashboard, POS, and Queue are the only working sections so far.`;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
 </script>
 </body>
 </html>
