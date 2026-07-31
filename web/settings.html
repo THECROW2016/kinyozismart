@@ -66,6 +66,7 @@
 </style>
 </head>
 <body>
+<script src="auth-guard.js"></script>
 <div class="app">
   <nav class="rail" aria-label="Main navigation">
     <div class="rail-logo">BO</div>
@@ -148,12 +149,26 @@
       opening_time: document.getElementById('shopOpen').value,
       closing_time: document.getElementById('shopClose').value
     };
-    await fetch(`${API_BASE}/settings/shop/${SHOP_ID}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    });
     const msg = document.getElementById('shopSaveMsg');
-    msg.classList.add('show');
-    setTimeout(() => msg.classList.remove('show'), 2000);
+    try {
+      const res = await fetch(`${API_BASE}/settings/shop/${SHOP_ID}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+
+      // Re-fetch to confirm what's actually stored, rather than trusting the request succeeded
+      await loadShop();
+      msg.textContent = 'Saved ✓';
+      msg.style.color = 'var(--green)';
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2500);
+    } catch (err) {
+      msg.textContent = `Failed to save: ${err.message}`;
+      msg.style.color = 'var(--barber-red)';
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 4000);
+    }
   }
 
   function fmtKsh(n) { return 'KSh ' + Number(n).toLocaleString(); }

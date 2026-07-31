@@ -46,6 +46,7 @@ CREATE TABLE users (
   phone         TEXT NOT NULL,
   email         TEXT,
   password_hash TEXT NOT NULL,
+  pin_hash      TEXT,
   role          user_role NOT NULL,
   photo_url     TEXT,
   is_active     BOOLEAN NOT NULL DEFAULT true,

@@ -14,7 +14,13 @@ router.get('/shop', async (req, res) => {
 // PATCH /api/settings/shop/:id
 router.patch('/shop/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, location, phone, opening_time, closing_time, mpesa_till, mpesa_paybill, receipt_footer } = req.body;
+  let { name, location, phone, opening_time, closing_time, mpesa_till, mpesa_paybill, receipt_footer } = req.body;
+  // Empty strings from HTML inputs aren't valid for TIME columns and shouldn't
+  // be treated as "clear this field" — normalize to null so COALESCE keeps
+  // the existing value instead of erroring.
+  if (opening_time === '') opening_time = null;
+  if (closing_time === '') closing_time = null;
+
   try {
     const { rows } = await pool.query(
       `UPDATE shops SET

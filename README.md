@@ -52,8 +52,27 @@ PGHOST=localhost PGUSER=postgres PGPASSWORD=yourpassword PGDATABASE=barberos npm
 
 ### Known limitations (by design, for this stage)
 
-- No authentication yet — `created_by` on sales is hardcoded to a seed "owner" user. Add real login before using this with real money.
 - M-Pesa is not yet integrated with Daraja — payment method is recorded, but no STK push is actually sent.
 - SMS/WhatsApp notifications aren't wired up — the queue's "you're next" flow only updates in-app right now.
 - Everything is scoped to a single hardcoded shop ID for this stage; multi-shop login/switching isn't built yet (though the schema already supports it).
+
+### Login (PIN-based)
+
+The app now opens on a landing page (`index.html`) with two entry points — **Admin Login** and **Staff Login** — each leading to a PIN pad (`login.html`). Pick your name, enter a 4-digit PIN.
+
+Demo PINs seeded by `migrate.js`:
+
+| Name | Role | PIN |
+|---|---|---|
+| Shop Owner | owner (admin) | `1111` |
+| Kevin Mwangi | barber | `2222` |
+| Njoroge Kamau | barber | `3333` |
+| Faith Wanjiku | barber | `4444` |
+| Brian Otieno | barber | `5555` |
+
+Session is stored in the browser (`localStorage`) after login; every other page redirects to `login.html` if there's no session. PINs are hashed with Node's built-in `scrypt` (not bcrypt, to avoid a native dependency) — fine for a low-stakes PIN, not intended as enterprise-grade auth.
+
+### Receipt printing
+
+After a sale completes in POS, a printable receipt appears (shop name/address, items, total, payment method, footer message). "Print Receipt" opens the browser print dialog with a print-only stylesheet so just the receipt prints, not the rest of the page.
 

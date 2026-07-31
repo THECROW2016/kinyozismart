@@ -125,9 +125,39 @@
     .summary-card{position:static;}
   }
   :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+  /* Receipt modal */
+  .receipt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);align-items:center;justify-content:center;z-index:70;}
+  .receipt-overlay.open{display:flex;}
+  .receipt-card{
+    background:#fff;color:#1a1a1a;width:300px;max-width:92vw;max-height:88vh;overflow-y:auto;
+    border-radius:8px;padding:22px 20px;font-family:'IBM Plex Mono',monospace;font-size:12px;
+  }
+  .receipt-card .shop-name-r{font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:center;letter-spacing:.5px;}
+  .receipt-card .r-line{display:flex;justify-content:center;text-align:center;font-size:10.5px;color:#555;margin-bottom:2px;}
+  .receipt-card hr{border:none;border-top:1px dashed #999;margin:10px 0;}
+  .receipt-card .r-row{display:flex;justify-content:space-between;padding:2px 0;}
+  .receipt-card .r-total{font-weight:700;font-size:13px;}
+  .receipt-card .r-footer{text-align:center;font-size:10.5px;color:#555;margin-top:12px;}
+  .receipt-actions{display:flex;gap:8px;margin-top:16px;}
+  .receipt-actions button{
+    flex:1;padding:11px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;border:none;
+  }
+  .btn-print{background:var(--amber);color:#1a1a1a;font-weight:700;}
+  .btn-done{background:#eee;color:#444;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #receiptPrintArea, #receiptPrintArea *{visibility:visible;}
+    #receiptPrintArea{position:fixed;top:0;left:0;width:100%;}
+    .receipt-actions{display:none;}
+    .receipt-overlay{background:none;position:static;}
+    .receipt-card{box-shadow:none;width:100%;max-height:none;}
+  }
 </style>
 </head>
 <body>
+<script src="auth-guard.js"></script>
 <div class="app">
   <nav class="rail" aria-label="Main navigation">
     <div class="rail-logo">BO</div>
@@ -217,15 +247,44 @@
   </main>
 </div>
 
+<div class="receipt-overlay" id="receiptOverlay">
+  <div>
+    <div class="receipt-card" id="receiptPrintArea">
+      <div class="shop-name-r" id="rShopName">Kinyozi Ndogo</div>
+      <div class="r-line" id="rShopLocation"></div>
+      <div class="r-line" id="rShopPhone"></div>
+      <hr>
+      <div class="r-row"><span id="rDate"></span><span id="rTime"></span></div>
+      <div class="r-row"><span>Customer</span><span id="rCustomer"></span></div>
+      <div class="r-row"><span>Barber</span><span id="rBarber"></span></div>
+      <hr>
+      <div id="rItems"></div>
+      <hr>
+      <div class="r-row"><span>Subtotal</span><span id="rSubtotal"></span></div>
+      <div class="r-row" id="rDiscountRow" style="display:none;"><span>Discount</span><span id="rDiscount"></span></div>
+      <div class="r-row r-total"><span>TOTAL</span><span id="rTotal"></span></div>
+      <div class="r-row"><span>Paid via</span><span id="rMethod"></span></div>
+      <div class="r-footer" id="rFooter">Asante kwa kutuchagua!</div>
+    </div>
+    <div class="receipt-actions">
+      <button class="btn-print" onclick="window.print()">🖨 Print Receipt</button>
+      <button class="btn-done" onclick="finishSale()">Done</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const SHOP_ID = '11111111-1111-1111-1111-111111111111';
-  const OWNER_USER_ID = '21111111-1111-1111-1111-111111111199'; // acts as created_by until real login exists
+  const OWNER_USER_ID = '21111111-1111-1111-1111-111111111199'; // fallback if no session (shouldn't happen — page is auth-guarded)
+  const CREATED_BY = (window.barberOSSession && window.barberOSSession.id) || OWNER_USER_ID;
+  let shopInfo = null;
   const API_BASE = window.location.origin + '/api';
   const params = new URLSearchParams(window.location.search);
   const queueEntryId = params.get('queue_entry');
 
   let services = [];
   let products = [];
+  let barbersList = [];
   let selectedServiceIds = new Set();
   let productQty = {};
   let selectedMethod = 'mpesa';
@@ -233,16 +292,19 @@
   function fmtKsh(n) { return 'KSh ' + Number(n).toLocaleString(); }
 
   async function loadCatalog() {
-    const [servicesRes, productsRes, barbersRes, customersRes] = await Promise.all([
+    const [servicesRes, productsRes, barbersRes, customersRes, shopRes] = await Promise.all([
       fetch(`${API_BASE}/services?shop_id=${SHOP_ID}`),
       fetch(`${API_BASE}/products?shop_id=${SHOP_ID}`),
       fetch(`${API_BASE}/barbers?shop_id=${SHOP_ID}`),
-      fetch(`${API_BASE}/customers?shop_id=${SHOP_ID}`)
+      fetch(`${API_BASE}/customers?shop_id=${SHOP_ID}`),
+      fetch(`${API_BASE}/settings/shop?shop_id=${SHOP_ID}`)
     ]);
     services = await servicesRes.json();
     products = await productsRes.json();
     const barbers = await barbersRes.json();
+    barbersList = barbers;
     const customers = await customersRes.json();
+    shopInfo = await shopRes.json();
 
     document.getElementById('servicePills').innerHTML = services.map(s => `
       <div class="pill" data-id="${s.id}" data-price="${s.price}" onclick="toggleService('${s.id}')">
@@ -369,7 +431,7 @@
           customer_id: customerId,
           barber_id: barberId,
           queue_entry_id: queueEntryId || undefined,
-          created_by: OWNER_USER_ID,
+          created_by: CREATED_BY,
           services: selectedServices,
           products: selectedProducts,
           discount_type: discountPct > 0 ? 'percentage' : undefined,
@@ -382,14 +444,60 @@
 
       msgEl.style.color = 'var(--amber)';
       msgEl.textContent = `Sale complete — ${fmtKsh(data.total)} via ${selectedMethod.toUpperCase()}.`;
+
+      showReceipt({
+        customerName: (() => {
+          const opt = document.getElementById('customerSelect').selectedOptions[0];
+          return opt && opt.value ? opt.dataset.name : 'Walk-in';
+        })(),
+        barberName: (barbersList.find(b => b.id === barberId) || {}).full_name || '—',
+        services: selectedServices.map(s => ({ name: (services.find(x => x.id === s.service_id) || {}).name || 'Service', price: s.price })),
+        products: selectedProducts.map(p => ({ name: (products.find(x => x.id === p.product_id) || {}).name || 'Product', qty: p.quantity, price: p.price })),
+        subtotal, discountPct, total, method: selectedMethod
+      });
+
       selectedServiceIds.clear();
       productQty = {};
-      setTimeout(() => { window.location.href = queueEntryId ? 'queue.html' : 'dashboard.html'; }, 1400);
     } catch (err) {
       msgEl.style.color = 'var(--barber-red)';
       msgEl.textContent = err.message;
     }
   });
+
+  function showReceipt(sale) {
+    document.getElementById('rShopName').textContent = (shopInfo && shopInfo.name) || 'Kinyozi Ndogo';
+    document.getElementById('rShopLocation').textContent = (shopInfo && shopInfo.location) || '';
+    document.getElementById('rShopPhone').textContent = (shopInfo && shopInfo.phone) || '';
+    const now = new Date();
+    document.getElementById('rDate').textContent = now.toLocaleDateString('en-GB');
+    document.getElementById('rTime').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('rCustomer').textContent = sale.customerName;
+    document.getElementById('rBarber').textContent = sale.barberName;
+
+    const itemsEl = document.getElementById('rItems');
+    let itemsHTML = '';
+    sale.services.forEach(s => { itemsHTML += `<div class="r-row"><span>${s.name}</span><span>${fmtKsh(s.price)}</span></div>`; });
+    sale.products.forEach(p => { itemsHTML += `<div class="r-row"><span>${p.name} x${p.qty}</span><span>${fmtKsh(p.price * p.qty)}</span></div>`; });
+    itemsEl.innerHTML = itemsHTML;
+
+    document.getElementById('rSubtotal').textContent = fmtKsh(sale.subtotal);
+    if (sale.discountPct > 0) {
+      document.getElementById('rDiscountRow').style.display = 'flex';
+      document.getElementById('rDiscount').textContent = `-${sale.discountPct}%`;
+    } else {
+      document.getElementById('rDiscountRow').style.display = 'none';
+    }
+    document.getElementById('rTotal').textContent = fmtKsh(sale.total);
+    document.getElementById('rMethod').textContent = sale.method.toUpperCase();
+    document.getElementById('rFooter').textContent = (shopInfo && shopInfo.receipt_footer) || 'Asante kwa kutuchagua!';
+
+    document.getElementById('receiptOverlay').classList.add('open');
+  }
+
+  function finishSale() {
+    document.getElementById('receiptOverlay').classList.remove('open');
+    window.location.href = queueEntryId ? 'queue.html' : 'dashboard.html';
+  }
 
   if (queueEntryId) {
     document.getElementById('ticketSourceLabel').textContent = 'From queue — completing service';

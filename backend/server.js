@@ -13,6 +13,7 @@ const inventoryRoutes = require('./routes/inventory');
 const expensesRoutes = require('./routes/expenses');
 const reportsRoutes = require('./routes/reports');
 const settingsRoutes = require('./routes/settings');
+const authRoutes = require('./routes/auth');
 const pool = require('./db');
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -46,7 +48,7 @@ app.get('/api/health', async (req, res) => {
 app.use(express.static(path.join(__dirname, '..', 'web')));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'web', 'dashboard.html'));
+  res.sendFile(path.join(__dirname, '..', 'web', 'index.html'));
 });
 
 app.listen(PORT, () => {
