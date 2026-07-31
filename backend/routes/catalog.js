@@ -49,4 +49,25 @@ router.get('/customers', async (req, res) => {
   res.json(rows);
 });
 
+router.get('/customers/:id', async (req, res) => {
+  const { id } = req.params;
+  const customer = await pool.query(`SELECT id, full_name, phone, loyalty_points, created_at FROM customers WHERE id = $1`, [id]);
+  if (!customer.rows.length) return res.status(404).json({ error: 'Customer not found' });
+
+  const visits = await pool.query(
+    `SELECT s.id, s.created_at, s.total, u.full_name AS barber_name,
+            COALESCE(json_agg(sv.name) FILTER (WHERE li.item_type = 'service'), '[]') AS services
+     FROM sales s
+     LEFT JOIN users u ON u.id = s.barber_id
+     LEFT JOIN sale_line_items li ON li.sale_id = s.id
+     LEFT JOIN services sv ON sv.id = li.service_id
+     WHERE s.customer_id = $1
+     GROUP BY s.id, u.full_name
+     ORDER BY s.created_at DESC LIMIT 20`,
+    [id]
+  );
+
+  res.json({ ...customer.rows[0], visits: visits.rows });
+});
+
 module.exports = router;

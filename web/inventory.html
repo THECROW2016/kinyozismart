@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BarberOS — Inventory</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1B1D; --ink-raised:#242426; --ink-line:#3A3936;
+    --chalk:#F2ECDD; --chalk-dim:#B8B3A6;
+    --barber-red:#C8352E; --barber-blue:#2C4A7C;
+    --amber:#E8A33D; --amber-dim:#8A6428;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--ink);color:var(--chalk);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .app{display:grid;grid-template-columns:76px 1fr;min-height:100vh;}
+  .rail{position:relative;background:repeating-linear-gradient(-45deg, var(--barber-red) 0 18px, var(--chalk) 18px 36px, var(--barber-blue) 36px 54px, var(--chalk) 54px 72px);background-size:200% 200%;animation:pole 14s linear infinite;display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px;}
+  @keyframes pole{from{background-position:0 0;}to{background-position:0 220px;}}
+  @media (prefers-reduced-motion: reduce){.rail{animation:none;}}
+  .rail::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(27,27,29,.15), rgba(27,27,29,.55) 60%, rgba(27,27,29,.85));}
+  .rail-logo{position:relative;z-index:1;width:40px;height:40px;border-radius:50%;background:var(--ink);border:2px solid var(--chalk);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;margin-bottom:18px;flex-shrink:0;}
+  .rail-nav{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;}
+  .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--chalk);cursor:pointer;text-decoration:none;transition:background .15s ease;}
+  .rail-item:hover{background:rgba(27,27,29,.5);}
+  .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
+  .rail-toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk);padding:12px 20px;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .2s ease, transform .2s ease;pointer-events:none;z-index:100;}
+  .rail-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  main{padding:28px 36px 60px;max-width:1200px;}
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px;}
+  .shop-name{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;}
+  .shop-sub{color:var(--chalk-dim);font-size:13px;margin-top:4px;}
+  .btn-add{background:var(--amber);color:var(--ink);border:none;border-radius:10px;padding:11px 18px;font-size:13.5px;font-weight:700;cursor:pointer;}
+
+  .inv-table{width:100%;border-collapse:collapse;}
+  .inv-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--chalk-dim);font-weight:600;padding:0 14px 10px;}
+  .inv-row{background:var(--ink-raised);}
+  .inv-row td{padding:14px;font-size:13.5px;border-top:1px solid var(--ink-line);}
+  .inv-row:first-child td{border-top:none;}
+  .prod-name{font-weight:700;}
+  .prod-cat{font-size:11.5px;color:var(--chalk-dim);}
+  .stock-badge{font-family:'IBM Plex Mono',monospace;padding:4px 10px;border-radius:999px;font-size:12px;}
+  .stock-badge.low{background:rgba(200,53,46,.15);color:var(--barber-red);}
+  .stock-badge.ok{background:rgba(78,154,99,.15);color:#4E9A63;}
+  .price-cell{font-family:'IBM Plex Mono',monospace;}
+  .restock-btn{background:transparent;border:1px solid var(--ink-line);color:var(--chalk-dim);border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;}
+
+  .table-wrap{background:transparent;border-radius:var(--radius);overflow:hidden;}
+
+  /* Modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:60;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:14px;padding:24px;width:360px;max-width:90vw;}
+  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.5px;margin-bottom:16px;}
+  .modal label{font-size:11.5px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.5px;}
+  .modal input{width:100%;margin:6px 0 14px;padding:10px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:14px;}
+  .modal-actions{display:flex;gap:8px;margin-top:8px;}
+  .modal-actions button{flex:1;padding:11px;border-radius:8px;cursor:pointer;font-size:13px;}
+  .btn-cancel{background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk-dim);}
+  .btn-confirm{background:var(--amber);border:none;color:var(--ink);font-weight:700;}
+
+  @media (max-width:860px){
+    .app{grid-template-columns:60px 1fr;}
+    main{padding:22px 16px 50px;}
+    .inv-table thead{display:none;}
+    .inv-table, .inv-table tbody, .inv-row, .inv-row td{display:block;width:100%;}
+    .inv-row{border-radius:12px;margin-bottom:10px;border:1px solid var(--ink-line);}
+    .inv-row td{border-top:none;}
+  }
+  :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Main navigation">
+    <div class="rail-logo">BO</div>
+    <div class="rail-nav">
+      <a class="rail-item" href="dashboard.html" title="Dashboard">▦</a>
+      <a class="rail-item" href="pos.html" title="POS / New Sale">✂</a>
+      <a class="rail-item" href="appointments.html" title="Appointments">📅</a>
+      <a class="rail-item" href="queue.html" title="Queue">☰</a>
+      <a class="rail-item" href="customers.html" title="Customers">👤</a>
+      <a class="rail-item" href="staff.html" title="Staff">👥</a>
+      <a class="rail-item active" href="inventory.html" title="Inventory">📦</a>
+      <a class="rail-item" href="reports.html" title="Reports">📈</a>
+      <a class="rail-item" href="settings.html" title="Settings">⚙</a>
+    </div>
+  </nav>
+  <div class="rail-toast" id="railToast"></div>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <div class="shop-name">INVENTORY</div>
+        <div class="shop-sub">Kinyozi Ndogo · products &amp; stock</div>
+      </div>
+      <button class="btn-add" onclick="openAddModal()">+ Add Product</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="inv-table">
+        <thead><tr><th>Product</th><th>Sell Price</th><th>Stock</th><th></th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Restock modal -->
+<div class="modal-overlay" id="restockModal">
+  <div class="modal">
+    <div class="modal-title">Restock Product</div>
+    <div id="restockProdName" style="font-size:13px;color:var(--chalk-dim);margin-bottom:14px;"></div>
+    <label>Quantity received</label>
+    <input id="restockQty" type="number" min="1" placeholder="e.g. 10">
+    <label>Unit cost (KSh)</label>
+    <input id="restockCost" type="number" min="0" placeholder="e.g. 250">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeRestockModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitRestock()">Add Stock</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add product modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-title">Add Product</div>
+    <label>Name</label>
+    <input id="addName" placeholder="e.g. Hair Wax">
+    <label>Sell price (KSh)</label>
+    <input id="addPrice" type="number" min="0" placeholder="e.g. 400">
+    <label>Starting stock</label>
+    <input id="addStock" type="number" min="0" placeholder="e.g. 10">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitAddProduct()">Add Product</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SHOP_ID = '11111111-1111-1111-1111-111111111111';
+  const API_BASE = window.location.origin + '/api';
+  let currentRestockId = null;
+
+  function fmtKsh(n) { return 'KSh ' + Number(n).toLocaleString(); }
+
+  function rowHTML(p) {
+    const low = p.stock_quantity <= p.low_stock_threshold;
+    return `
+      <tr class="inv-row">
+        <td><div class="prod-name">${p.name}</div><div class="prod-cat">${p.category || 'Uncategorized'}</div></td>
+        <td class="price-cell">${fmtKsh(p.sell_price)}</td>
+        <td><span class="stock-badge ${low ? 'low' : 'ok'}">${p.stock_quantity} left</span></td>
+        <td><button class="restock-btn" onclick="openRestockModal('${p.id}', '${p.name.replace(/'/g,"\\'")}')">Restock</button></td>
+      </tr>`;
+  }
+
+  async function loadInventory() {
+    const res = await fetch(`${API_BASE}/inventory/products?shop_id=${SHOP_ID}`);
+    const products = await res.json();
+    document.getElementById('invBody').innerHTML = products.map(rowHTML).join('') || `<tr><td colspan="4" style="padding:30px;text-align:center;color:var(--chalk-dim);">No products yet.</td></tr>`;
+  }
+
+  function openRestockModal(id, name) {
+    currentRestockId = id;
+    document.getElementById('restockProdName').textContent = name;
+    document.getElementById('restockQty').value = '';
+    document.getElementById('restockCost').value = '';
+    document.getElementById('restockModal').classList.add('open');
+  }
+  function closeRestockModal() { document.getElementById('restockModal').classList.remove('open'); }
+
+  async function submitRestock() {
+    const qty = Number(document.getElementById('restockQty').value);
+    const cost = Number(document.getElementById('restockCost').value) || 0;
+    if (!qty || qty <= 0) return;
+    await fetch(`${API_BASE}/inventory/purchases`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop_id: SHOP_ID, items: [{ product_id: currentRestockId, quantity: qty, unit_cost: cost }] })
+    });
+    closeRestockModal();
+    loadInventory();
+  }
+
+  function openAddModal() {
+    document.getElementById('addName').value = '';
+    document.getElementById('addPrice').value = '';
+    document.getElementById('addStock').value = '';
+    document.getElementById('addModal').classList.add('open');
+  }
+  function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+
+  async function submitAddProduct() {
+    const name = document.getElementById('addName').value.trim();
+    const price = Number(document.getElementById('addPrice').value);
+    const stock = Number(document.getElementById('addStock').value) || 0;
+    if (!name || !price) return;
+    await fetch(`${API_BASE}/inventory/products`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop_id: SHOP_ID, name, sell_price: price, stock_quantity: stock })
+    });
+    closeAddModal();
+    loadInventory();
+  }
+
+  let toastTimer;
+  function comingSoon(feature) {
+    const toast = document.getElementById('railToast');
+    toast.textContent = `${feature} isn't built yet.`;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  loadInventory();
+</script>
+</body>
+</html>

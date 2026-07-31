@@ -7,6 +7,12 @@ const dashboardRoutes = require('./routes/dashboard');
 const queueRoutes = require('./routes/queue');
 const catalogRoutes = require('./routes/catalog');
 const salesRoutes = require('./routes/sales');
+const appointmentsRoutes = require('./routes/appointments');
+const staffRoutes = require('./routes/staff');
+const inventoryRoutes = require('./routes/inventory');
+const expensesRoutes = require('./routes/expenses');
+const reportsRoutes = require('./routes/reports');
+const settingsRoutes = require('./routes/settings');
 const pool = require('./db');
 
 const app = express();
@@ -20,6 +26,12 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api', catalogRoutes); // /api/services, /api/products, /api/barbers, /api/customers
 app.use('/api/sales', salesRoutes);
+app.use('/api/appointments', appointmentsRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/expenses', expensesRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {

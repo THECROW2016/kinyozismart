@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BarberOS — Settings</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1B1D; --ink-raised:#242426; --ink-line:#3A3936;
+    --chalk:#F2ECDD; --chalk-dim:#B8B3A6;
+    --barber-red:#C8352E; --barber-blue:#2C4A7C;
+    --amber:#E8A33D; --amber-dim:#8A6428; --green:#4E9A63;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--ink);color:var(--chalk);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .app{display:grid;grid-template-columns:76px 1fr;min-height:100vh;}
+  .rail{position:relative;background:repeating-linear-gradient(-45deg, var(--barber-red) 0 18px, var(--chalk) 18px 36px, var(--barber-blue) 36px 54px, var(--chalk) 54px 72px);background-size:200% 200%;animation:pole 14s linear infinite;display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px;}
+  @keyframes pole{from{background-position:0 0;}to{background-position:0 220px;}}
+  @media (prefers-reduced-motion: reduce){.rail{animation:none;}}
+  .rail::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(27,27,29,.15), rgba(27,27,29,.55) 60%, rgba(27,27,29,.85));}
+  .rail-logo{position:relative;z-index:1;width:40px;height:40px;border-radius:50%;background:var(--ink);border:2px solid var(--chalk);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;margin-bottom:18px;flex-shrink:0;}
+  .rail-nav{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;}
+  .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--chalk);cursor:pointer;text-decoration:none;transition:background .15s ease;}
+  .rail-item:hover{background:rgba(27,27,29,.5);}
+  .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
+  .rail-toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk);padding:12px 20px;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .2s ease, transform .2s ease;pointer-events:none;z-index:100;}
+  .rail-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  main{padding:28px 36px 60px;max-width:900px;}
+  .topbar{margin-bottom:22px;}
+  .shop-name{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;}
+  .shop-sub{color:var(--chalk-dim);font-size:13px;margin-top:4px;}
+
+  .card{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:22px 24px;margin-bottom:18px;}
+  .card-title{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;color:var(--chalk-dim);font-weight:600;margin-bottom:16px;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .field label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--chalk-dim);display:block;margin-bottom:6px;}
+  .field input{width:100%;padding:10px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:13.5px;}
+  .field input:disabled{opacity:.5;}
+  .btn-save{background:var(--amber);color:var(--ink);border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px;}
+  .save-msg{font-size:12px;color:var(--green);margin-left:12px;opacity:0;transition:opacity .2s;}
+  .save-msg.show{opacity:1;}
+
+  .svc-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--ink-line);}
+  .svc-row:last-child{border-bottom:none;}
+  .svc-name{font-size:13.5px;font-weight:600;}
+  .svc-duration{font-size:11.5px;color:var(--chalk-dim);}
+  .svc-price-input{width:90px;padding:7px 10px;background:var(--ink);border:1px solid var(--ink-line);border-radius:6px;color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;}
+
+  .add-svc-row{display:flex;gap:8px;margin-top:14px;}
+  .add-svc-row input{flex:1;padding:9px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-size:13px;}
+  .add-svc-row button{background:var(--amber);border:none;color:var(--ink);font-weight:700;border-radius:8px;padding:9px 16px;font-size:12.5px;cursor:pointer;}
+
+  .disabled-note{font-size:12px;color:var(--chalk-dim);background:rgba(184,179,166,.08);border:1px dashed var(--ink-line);border-radius:8px;padding:10px 14px;}
+
+  @media (max-width:860px){
+    .app{grid-template-columns:60px 1fr;}
+    main{padding:22px 16px 50px;}
+    .field-row{grid-template-columns:1fr;}
+  }
+  :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Main navigation">
+    <div class="rail-logo">BO</div>
+    <div class="rail-nav">
+      <a class="rail-item" href="dashboard.html" title="Dashboard">▦</a>
+      <a class="rail-item" href="pos.html" title="POS / New Sale">✂</a>
+      <a class="rail-item" href="appointments.html" title="Appointments">📅</a>
+      <a class="rail-item" href="queue.html" title="Queue">☰</a>
+      <a class="rail-item" href="customers.html" title="Customers">👤</a>
+      <a class="rail-item" href="staff.html" title="Staff">👥</a>
+      <a class="rail-item" href="inventory.html" title="Inventory">📦</a>
+      <a class="rail-item" href="reports.html" title="Reports">📈</a>
+      <a class="rail-item active" href="settings.html" title="Settings">⚙</a>
+    </div>
+  </nav>
+  <div class="rail-toast" id="railToast"></div>
+
+  <main>
+    <div class="topbar">
+      <div class="shop-name">SETTINGS</div>
+      <div class="shop-sub">Kinyozi Ndogo · shop profile &amp; price list</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Shop Profile</div>
+      <div class="field-row">
+        <div class="field"><label>Shop name</label><input id="shopName"></div>
+        <div class="field"><label>Phone</label><input id="shopPhone"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Location</label><input id="shopLocation"></div>
+        <div class="field"><label>Receipt footer</label><input id="shopFooter"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Opening time</label><input id="shopOpen" type="time"></div>
+        <div class="field"><label>Closing time</label><input id="shopClose" type="time"></div>
+      </div>
+      <button class="btn-save" onclick="saveShop()">Save Changes</button>
+      <span class="save-msg" id="shopSaveMsg">Saved ✓</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Services &amp; Prices</div>
+      <div id="servicesList">Loading…</div>
+      <div class="add-svc-row">
+        <input id="newSvcName" placeholder="New service name">
+        <input id="newSvcPrice" type="number" placeholder="Price (KSh)" style="max-width:120px;">
+        <button onclick="addService()">Add</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">M-Pesa, Receipts &amp; Permissions</div>
+      <div class="disabled-note">M-Pesa API credentials, custom receipt branding, and per-user permissions aren't wired up yet — payments are currently recorded manually by method (M-Pesa / Cash / Card) without a live Daraja integration.</div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const SHOP_ID = '11111111-1111-1111-1111-111111111111';
+  const API_BASE = window.location.origin + '/api';
+
+  async function loadShop() {
+    const res = await fetch(`${API_BASE}/settings/shop?shop_id=${SHOP_ID}`);
+    const shop = await res.json();
+    document.getElementById('shopName').value = shop.name || '';
+    document.getElementById('shopPhone').value = shop.phone || '';
+    document.getElementById('shopLocation').value = shop.location || '';
+    document.getElementById('shopFooter').value = shop.receipt_footer || '';
+    document.getElementById('shopOpen').value = (shop.opening_time || '').slice(0,5);
+    document.getElementById('shopClose').value = (shop.closing_time || '').slice(0,5);
+  }
+
+  async function saveShop() {
+    const body = {
+      name: document.getElementById('shopName').value,
+      phone: document.getElementById('shopPhone').value,
+      location: document.getElementById('shopLocation').value,
+      receipt_footer: document.getElementById('shopFooter').value,
+      opening_time: document.getElementById('shopOpen').value,
+      closing_time: document.getElementById('shopClose').value
+    };
+    await fetch(`${API_BASE}/settings/shop/${SHOP_ID}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const msg = document.getElementById('shopSaveMsg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 2000);
+  }
+
+  function fmtKsh(n) { return 'KSh ' + Number(n).toLocaleString(); }
+
+  async function loadServices() {
+    const res = await fetch(`${API_BASE}/services?shop_id=${SHOP_ID}`);
+    const services = await res.json();
+    document.getElementById('servicesList').innerHTML = services.map(s => `
+      <div class="svc-row">
+        <div>
+          <div class="svc-name">${s.name}</div>
+          <div class="svc-duration">${s.duration_mins} min</div>
+        </div>
+        <input class="svc-price-input" value="${Number(s.price)}" onchange="updateServicePrice('${s.id}', this.value)">
+      </div>`).join('');
+  }
+
+  async function updateServicePrice(id, price) {
+    await fetch(`${API_BASE}/settings/services/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ price: Number(price) })
+    });
+  }
+
+  async function addService() {
+    const name = document.getElementById('newSvcName').value.trim();
+    const price = Number(document.getElementById('newSvcPrice').value);
+    if (!name || !price) return;
+    await fetch(`${API_BASE}/settings/services`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: SHOP_ID, name, price })
+    });
+    document.getElementById('newSvcName').value = '';
+    document.getElementById('newSvcPrice').value = '';
+    loadServices();
+  }
+
+  let toastTimer;
+  function comingSoon(feature) {
+    const toast = document.getElementById('railToast');
+    toast.textContent = `${feature} isn't built yet.`;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  loadShop();
+  loadServices();
+</script>
+</body>
+</html>
