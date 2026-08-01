@@ -163,4 +163,22 @@ router.post('/:id/clock-out', async (req, res) => {
   }
 });
 
+// DELETE /api/staff/:id -> soft delete (deactivate). Staff with sales/commission
+// history can't be hard-deleted without breaking that history, so this removes
+// them from the active roster instead of destroying records.
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE users SET is_active = false WHERE id = $1 AND role != 'owner' RETURNING id, full_name`,
+      [id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Staff member not found (or cannot remove the owner account)' });
+    res.json({ deleted: true, id: rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to remove staff member', detail: err.message });
+  }
+});
+
 module.exports = router;

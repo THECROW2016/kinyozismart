@@ -44,6 +44,8 @@
 
   .appt-list{display:flex;flex-direction:column;gap:10px;}
   .appt-card{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:16px;}
+  .appt-delete{cursor:pointer;color:var(--chalk-dim);font-size:15px;padding:6px;border-radius:6px;flex-shrink:0;}
+  .appt-delete:hover{color:var(--barber-red);background:rgba(200,53,46,.12);}
   .appt-time-block{
     font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--amber);
     background:rgba(232,163,61,.1);border-radius:8px;padding:8px 12px;text-align:center;min-width:64px;
@@ -159,7 +161,14 @@
           <div class="appt-barber">${a.barber_name ? 'with ' + a.barber_name : 'No barber assigned'}</div>
         </div>
         <span class="status-pill-sm ${a.status}">${a.status.replace('_',' ')}</span>
+        <span class="appt-delete" title="Delete appointment" onclick="deleteAppointment('${a.id}')">🗑</span>
       </div>`;
+  }
+
+  async function deleteAppointment(id) {
+    if (!confirm('Delete this appointment? This cannot be undone.')) return;
+    await fetch(`${API_BASE}/appointments/${id}`, { method: 'DELETE' });
+    loadAppointments();
   }
 
   async function loadAppointments() {

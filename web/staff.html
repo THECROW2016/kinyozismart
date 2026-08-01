@@ -41,6 +41,8 @@
   .staff-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:18px;}
   .staff-card{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:20px;}
   .staff-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .staff-delete{cursor:pointer;color:var(--chalk-dim);font-size:14px;padding:6px;border-radius:6px;flex-shrink:0;align-self:flex-start;}
+  .staff-delete:hover{color:var(--barber-red);background:rgba(200,53,46,.12);}
   .staff-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg, var(--barber-red), var(--amber));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--ink);flex-shrink:0;overflow:hidden;}
   .staff-avatar img{width:100%;height:100%;object-fit:cover;}
   .staff-name{font-weight:700;font-size:15px;}
@@ -179,6 +181,7 @@
 
   function staffCardHTML(b) {
     const isBarber = b.role === 'barber';
+    const deleteBtn = `<span class="staff-delete" title="Remove ${b.full_name}" onclick="deleteStaff('${b.id}','${b.full_name.replace(/'/g,"\\'")}')">🗑</span>`;
 
     if (!isBarber) {
       // Simplified card for receptionists/managers — no commission/attendance data yet
@@ -186,11 +189,12 @@
         <div class="staff-card">
           <div class="staff-top">
             <div class="staff-avatar">${avatarHTML(b)}</div>
-            <div>
+            <div style="flex:1;">
               <div class="staff-name">${b.full_name}</div>
               <div class="staff-spec">${b.phone || ''}</div>
               <span class="role-badge">${b.role}</span>
             </div>
+            ${deleteBtn}
           </div>
         </div>`;
     }
@@ -207,10 +211,11 @@
       <div class="staff-card">
         <div class="staff-top">
           <div class="staff-avatar">${avatarHTML(b)}</div>
-          <div>
+          <div style="flex:1;">
             <div class="staff-name">${b.full_name}</div>
             <div class="staff-spec">${(b.specialties || []).join(', ') || 'General'}</div>
           </div>
+          ${deleteBtn}
         </div>
         ${badge}
         <div class="staff-stats">
@@ -222,6 +227,12 @@
         <div class="staff-row"><span class="label">Commission owed today</span><span class="val">${fmtKsh(b.commission_today)}</span></div>
         ${btn}
       </div>`;
+  }
+
+  async function deleteStaff(id, name) {
+    if (!confirm(`Remove ${name} from active staff? Their sales/commission history is kept, they just won't appear on the roster anymore.`)) return;
+    await fetch(`${API_BASE}/staff/${id}`, { method: 'DELETE' });
+    loadStaff();
   }
 
   async function loadStaff() {

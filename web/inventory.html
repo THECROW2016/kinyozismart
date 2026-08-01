@@ -50,6 +50,8 @@
   .stock-badge.ok{background:rgba(78,154,99,.15);color:#4E9A63;}
   .price-cell{font-family:'IBM Plex Mono',monospace;}
   .restock-btn{background:transparent;border:1px solid var(--ink-line);color:var(--chalk-dim);border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;}
+  .inv-delete{cursor:pointer;color:var(--chalk-dim);font-size:14px;padding:7px;border-radius:6px;display:flex;align-items:center;}
+  .inv-delete:hover{color:var(--barber-red);background:rgba(200,53,46,.12);}
 
   .table-wrap{background:transparent;border-radius:var(--radius);overflow:hidden;}
 
@@ -162,8 +164,17 @@
         <td><div class="prod-name">${p.name}</div><div class="prod-cat">${p.category || 'Uncategorized'}</div></td>
         <td class="price-cell">${fmtKsh(p.sell_price)}</td>
         <td><span class="stock-badge ${low ? 'low' : 'ok'}">${p.stock_quantity} left</span></td>
-        <td><button class="restock-btn" onclick="openRestockModal('${p.id}', '${p.name.replace(/'/g,"\\'")}')">Restock</button></td>
+        <td style="display:flex;gap:8px;">
+          <button class="restock-btn" onclick="openRestockModal('${p.id}', '${p.name.replace(/'/g,"\\'")}')">Restock</button>
+          <span class="inv-delete" title="Delete ${p.name}" onclick="deleteProduct('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑</span>
+        </td>
       </tr>`;
+  }
+
+  async function deleteProduct(id, name) {
+    if (!confirm(`Delete "${name}" from inventory? Past sales records are kept, it just won't appear in the catalog anymore.`)) return;
+    await fetch(`${API_BASE}/inventory/products/${id}`, { method: 'DELETE' });
+    loadInventory();
   }
 
   async function loadInventory() {

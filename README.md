@@ -72,7 +72,7 @@ Session is stored in the browser (`localStorage`) after login; every other page 
 ### Roles: exactly two account types
 
 - **Admin (owner):** full visibility into everything the business does — every page, including Settings.
-- **Manager:** runs day-to-day operations — every page except Settings. Can add records (staff, appointments, products, expenses, etc.) but the app has no delete functionality anywhere, by design, so this is naturally "add, not delete."
+- **Manager:** runs day-to-day operations — every page except Settings. Can add **and delete** Appointments, Staff, and Inventory. Deletes on Staff and Inventory are soft deletes (an `is_active` flag) so sales/commission history tied to them is never lost — they just drop off the active roster/catalog. Appointment deletes are permanent (nothing else depends on them). There's no delete capability anywhere else in the app.
 
 Barbers and receptionists are still real records (needed for POS attribution, commissions, and specialties) but **don't log into the app individually** — only Admin and Manager accounts do. When registering a barber/receptionist from the Staff page, no PIN is requested; when registering a manager, a PIN is required.
 

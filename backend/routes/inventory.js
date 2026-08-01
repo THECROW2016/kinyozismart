@@ -87,4 +87,21 @@ router.post('/purchases', async (req, res) => {
   }
 });
 
+// DELETE /api/inventory/products/:id -> soft delete (deactivate). Products with
+// sale history can't be hard-deleted without breaking that history.
+router.delete('/products/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE products SET is_active = false WHERE id = $1 RETURNING id, name`,
+      [id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Product not found' });
+    res.json({ deleted: true, id: rows[0].id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete product', detail: err.message });
+  }
+});
+
 module.exports = router;

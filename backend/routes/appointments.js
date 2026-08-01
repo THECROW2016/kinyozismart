@@ -98,4 +98,17 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+// DELETE /api/appointments/:id
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query(`DELETE FROM appointments WHERE id = $1 RETURNING id`, [id]);
+    if (!rows.length) return res.status(404).json({ error: 'Appointment not found' });
+    res.json({ deleted: true, id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete appointment', detail: err.message });
+  }
+});
+
 module.exports = router;
