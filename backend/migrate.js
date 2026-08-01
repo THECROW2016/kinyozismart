@@ -66,6 +66,20 @@ async function run() {
     if (renamed.rows.length) {
       console.log(`[migrate] renamed ${renamed.rows.length} shop(s) to Kinyozi Management System.`);
     }
+
+    // Ensure a demo Manager account exists, to exercise the manager-vs-owner
+    // role distinction (manager: operational + reports, no Settings/staff registration)
+    const MANAGER_ID = '21111111-1111-1111-1111-111111111198';
+    const managerCheck = await client.query(`SELECT id FROM users WHERE id = $1`, [MANAGER_ID]);
+    if (!managerCheck.rows.length) {
+      await client.query(
+        `INSERT INTO users (id, shop_id, full_name, phone, password_hash, pin_hash, role)
+         VALUES ($1, '11111111-1111-1111-1111-111111111111', 'Store Manager', '0722000001', '', $2, 'manager')
+         ON CONFLICT (id) DO NOTHING`,
+        [MANAGER_ID, hashPin('1212')]
+      );
+      console.log('[migrate] created demo Manager account (PIN 1212).');
+    }
   } finally {
     client.release();
     await pool.end();

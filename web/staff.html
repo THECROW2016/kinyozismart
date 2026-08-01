@@ -36,13 +36,16 @@
   .topbar{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px;}
   .shop-name{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;}
   .shop-sub{color:var(--chalk-dim);font-size:13px;margin-top:4px;}
+  .btn-add{background:var(--amber);color:var(--ink);border:none;border-radius:10px;padding:11px 18px;font-size:13.5px;font-weight:700;cursor:pointer;}
 
   .staff-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:18px;}
   .staff-card{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:20px;}
   .staff-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
-  .staff-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg, var(--barber-red), var(--amber));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--ink);flex-shrink:0;}
+  .staff-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg, var(--barber-red), var(--amber));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--ink);flex-shrink:0;overflow:hidden;}
+  .staff-avatar img{width:100%;height:100%;object-fit:cover;}
   .staff-name{font-weight:700;font-size:15px;}
   .staff-spec{font-size:11.5px;color:var(--chalk-dim);margin-top:2px;}
+  .role-badge{font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:999px;background:rgba(44,74,124,.18);color:var(--barber-blue);display:inline-block;margin-top:4px;}
 
   .staff-stats{display:flex;gap:16px;margin-bottom:16px;padding:14px 0;border-top:1px dashed var(--ink-line);border-bottom:1px dashed var(--ink-line);}
   .staff-stat .n{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;}
@@ -65,6 +68,24 @@
   }
   .clock-btn.in{background:var(--amber);color:var(--ink);}
   .clock-btn.out{background:transparent;border:1px solid var(--ink-line);color:var(--chalk-dim);}
+
+  /* Registration modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);align-items:center;justify-content:center;z-index:70;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .reg-modal{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:16px;padding:26px;width:400px;max-width:100%;max-height:88vh;overflow-y:auto;}
+  .reg-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.5px;margin-bottom:18px;}
+  .reg-field{margin-bottom:14px;}
+  .reg-field label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--chalk-dim);display:block;margin-bottom:6px;}
+  .reg-field input, .reg-field select{width:100%;padding:10px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:13.5px;}
+  .photo-upload{display:flex;align-items:center;gap:14px;}
+  .photo-preview{width:56px;height:56px;border-radius:50%;background:var(--ink);border:1.5px dashed var(--ink-line);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--chalk-dim);font-size:11px;text-align:center;}
+  .photo-preview img{width:100%;height:100%;object-fit:cover;}
+  .photo-upload input[type=file]{font-size:11.5px;color:var(--chalk-dim);}
+  .reg-error{color:var(--barber-red);font-size:12px;margin-bottom:10px;min-height:16px;}
+  .reg-actions{display:flex;gap:8px;margin-top:6px;}
+  .reg-actions button{flex:1;padding:11px;border-radius:8px;cursor:pointer;font-size:13px;border:none;}
+  .btn-cancel{background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk-dim);}
+  .btn-confirm{background:var(--amber);color:var(--ink);font-weight:700;}
 
   @media (max-width:860px){
     .app{grid-template-columns:60px 1fr;}
@@ -100,20 +121,79 @@
         <div class="shop-name">STAFF</div>
         <div class="shop-sub">Kinyozi Management System · today's performance &amp; attendance</div>
       </div>
+      <button class="btn-add" id="addStaffBtn" style="display:none;" onclick="openRegModal()">+ Register Staff</button>
     </div>
 
     <div class="staff-grid" id="staffGrid">Loading…</div>
   </main>
 </div>
 
+<div class="modal-overlay" id="regModal">
+  <div class="reg-modal">
+    <div class="reg-title">Register Staff</div>
+    <div class="reg-error" id="regError"></div>
+
+    <div class="reg-field">
+      <label>Photo</label>
+      <div class="photo-upload">
+        <div class="photo-preview" id="photoPreview">No photo</div>
+        <input type="file" accept="image/*" id="regPhoto" onchange="handlePhotoSelect(event)">
+      </div>
+    </div>
+    <div class="reg-field"><label>Full name</label><input id="regName" placeholder="e.g. James Mwangi"></div>
+    <div class="reg-field"><label>Phone</label><input id="regPhone" placeholder="07XX XXX XXX"></div>
+    <div class="reg-field">
+      <label>Role</label>
+      <select id="regRole" onchange="toggleBarberFields()">
+        <option value="barber">Barber</option>
+        <option value="receptionist">Receptionist</option>
+        <option value="manager">Manager</option>
+      </select>
+    </div>
+    <div id="barberFields">
+      <div class="reg-field"><label>Specialties (comma-separated)</label><input id="regSpecialties" placeholder="Fades, Beard trim"></div>
+      <div class="reg-field"><label>Commission rate (%)</label><input id="regCommission" type="number" value="40"></div>
+    </div>
+    <div class="reg-field"><label>4-digit login PIN</label><input id="regPin" maxlength="4" inputmode="numeric" placeholder="e.g. 6789"></div>
+
+    <div class="reg-actions">
+      <button class="btn-cancel" onclick="closeRegModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitRegistration()">Register</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const SHOP_ID = '11111111-1111-1111-1111-111111111111';
   const API_BASE = window.location.origin + '/api';
+  let selectedPhotoData = null;
 
   function fmtKsh(n) { return 'KSh ' + Number(n).toLocaleString(); }
   function initials(name) { return name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(); }
+  function avatarHTML(person) {
+    return person.photo_url
+      ? `<img src="${person.photo_url}" alt="${person.full_name}">`
+      : initials(person.full_name);
+  }
 
   function staffCardHTML(b) {
+    const isBarber = b.role === 'barber';
+
+    if (!isBarber) {
+      // Simplified card for receptionists/managers — no commission/attendance data yet
+      return `
+        <div class="staff-card">
+          <div class="staff-top">
+            <div class="staff-avatar">${avatarHTML(b)}</div>
+            <div>
+              <div class="staff-name">${b.full_name}</div>
+              <div class="staff-spec">${b.phone || ''}</div>
+              <span class="role-badge">${b.role}</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
     const clockedIn = b.clock_in && !b.clock_out;
     const badge = clockedIn
       ? `<span class="attend-badge in"><span class="attend-dot"></span>On shift since ${new Date(b.clock_in).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'})}</span>`
@@ -125,7 +205,7 @@
     return `
       <div class="staff-card">
         <div class="staff-top">
-          <div class="staff-avatar">${initials(b.full_name)}</div>
+          <div class="staff-avatar">${avatarHTML(b)}</div>
           <div>
             <div class="staff-name">${b.full_name}</div>
             <div class="staff-spec">${(b.specialties || []).join(', ') || 'General'}</div>
@@ -161,6 +241,72 @@
     loadStaff();
   }
 
+  // ---- Registration (owner only) ----
+  function openRegModal() {
+    document.getElementById('regName').value = '';
+    document.getElementById('regPhone').value = '';
+    document.getElementById('regRole').value = 'barber';
+    document.getElementById('regSpecialties').value = '';
+    document.getElementById('regCommission').value = '40';
+    document.getElementById('regPin').value = '';
+    document.getElementById('regError').textContent = '';
+    document.getElementById('photoPreview').innerHTML = 'No photo';
+    selectedPhotoData = null;
+    toggleBarberFields();
+    document.getElementById('regModal').classList.add('open');
+  }
+  function closeRegModal() { document.getElementById('regModal').classList.remove('open'); }
+
+  function toggleBarberFields() {
+    const isBarber = document.getElementById('regRole').value === 'barber';
+    document.getElementById('barberFields').style.display = isBarber ? 'block' : 'none';
+  }
+
+  function handlePhotoSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      document.getElementById('regError').textContent = 'Photo must be under 4MB.';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      selectedPhotoData = reader.result;
+      document.getElementById('photoPreview').innerHTML = `<img src="${selectedPhotoData}">`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function submitRegistration() {
+    const full_name = document.getElementById('regName').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const role = document.getElementById('regRole').value;
+    const pin = document.getElementById('regPin').value.trim();
+    const errorEl = document.getElementById('regError');
+
+    if (!full_name || !phone) { errorEl.textContent = 'Name and phone are required.'; return; }
+    if (!/^\d{4}$/.test(pin)) { errorEl.textContent = 'PIN must be exactly 4 digits.'; return; }
+
+    const body = { shop_id: SHOP_ID, full_name, phone, role, pin, photo_url: selectedPhotoData };
+    if (role === 'barber') {
+      const specialties = document.getElementById('regSpecialties').value.split(',').map(s => s.trim()).filter(Boolean);
+      body.specialties = specialties;
+      body.commission_rate = Number(document.getElementById('regCommission').value) || 40;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/staff`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Registration failed');
+      closeRegModal();
+      loadStaff();
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
+  }
+
   let toastTimer;
   function comingSoon(feature) {
     const toast = document.getElementById('railToast');
@@ -168,6 +314,11 @@
     toast.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // Only owners can register new staff
+  if (window.barberOSSession && window.barberOSSession.role === 'owner') {
+    document.getElementById('addStaffBtn').style.display = 'inline-block';
   }
 
   loadStaff();

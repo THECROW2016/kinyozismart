@@ -65,12 +65,27 @@ Demo PINs seeded by `migrate.js`:
 | Name | Role | PIN |
 |---|---|---|
 | Shop Owner | owner (admin) | `1111` |
+| Store Manager | manager | `1212` |
 | Kevin Mwangi | barber | `2222` |
 | Njoroge Kamau | barber | `3333` |
 | Faith Wanjiku | barber | `4444` |
 | Brian Otieno | barber | `5555` |
 
 Session is stored in the browser (`localStorage`) after login; every other page redirects to `login.html` if there's no session. PINs are hashed with Node's built-in `scrypt` (not bcrypt, to avoid a native dependency) — fine for a low-stakes PIN, not intended as enterprise-grade auth.
+
+### Roles: Admin (owner) vs Manager vs Staff
+
+Access is now split by role, enforced client-side in `auth-guard.js` (hides nav links + redirects on direct navigation for pages a role can't use):
+
+- **Owner (admin):** everything — Dashboard, POS, Queue, Appointments, Customers, Staff (including registering new staff), Inventory, Styles, Reports, Settings.
+- **Manager:** Dashboard, POS, Queue, Appointments, Customers, Staff (view only, no registration), Inventory, Styles, Reports — no Settings.
+- **Barber / Receptionist:** POS, Queue, Appointments, Customers, Styles only.
+
+This is client-side gating, matching the PIN system's overall security level — not a substitute for real server-side authorization if this goes into production with real money.
+
+### Staff registration & photos
+
+Owners can register new staff from the Staff page (name, phone, role, PIN, and — for barbers — specialties and commission rate). Photos are uploaded as a file, read client-side, and stored as a base64 data URL directly in the database (`users.photo_url`) — no separate file storage needed, and it survives redeploys since it lives in Postgres rather than the app's ephemeral filesystem.
 
 ### Receipt printing
 

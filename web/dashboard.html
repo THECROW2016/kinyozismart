@@ -389,9 +389,10 @@
     <div class="topbar">
       <div>
         <div class="shop-name">KINYOZI MANAGEMENT SYSTEM</div>
-        <div class="shop-sub">Ronald Ngala St, Nairobi CBD</div>
+        <div class="shop-sub">Fresh Fades. Trusted Hands. Every Time.</div>
       </div>
       <div class="topbar-right">
+        <span class="status-pill" id="roleViewPill" style="display:none;"></span>
         <span class="status-pill"><span class="status-dot"></span>OPEN</span>
         <span class="date-txt">Thu, 30 Jul 2026 · 3:42 PM</span>
       </div>
@@ -634,10 +635,17 @@
   loadQueuePreview();
   setInterval(loadQueuePreview, 15000); // refresh queue every 15s
 
+  if (window.barberOSSession) {
+    const pill = document.getElementById('roleViewPill');
+    const role = window.barberOSSession.role;
+    pill.textContent = role === 'owner' ? 'ADMIN VIEW' : 'MANAGER VIEW';
+    pill.style.display = 'inline-flex';
+  }
+
   let toastTimer;
   function comingSoon(feature) {
     const toast = document.getElementById('railToast');
-    toast.textContent = `${feature} isn't built yet — Dashboard, POS, and Queue are the only working sections so far.`;
+    toast.textContent = `${feature} isn't built yet.`;
     toast.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
