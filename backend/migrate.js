@@ -47,7 +47,6 @@ async function run() {
 
     // Ensure pin_hash exists even on databases migrated before PIN login was added
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_hash TEXT`);
-
     const { rows: needPin } = await client.query(`SELECT id FROM users WHERE pin_hash IS NULL`);
     if (needPin.length) {
       console.log(`[migrate] assigning demo PINs to ${needPin.length} user(s)...`);
@@ -58,6 +57,14 @@ async function run() {
       console.log('[migrate] demo PINs assigned.');
     } else {
       console.log('[migrate] all users already have PINs.');
+    }
+
+    // One-time rename: the demo shop was originally seeded as "Kinyozi Ndogo"
+    const renamed = await client.query(
+      `UPDATE shops SET name = 'Kinyozi Management System' WHERE name = 'Kinyozi Ndogo' RETURNING id`
+    );
+    if (renamed.rows.length) {
+      console.log(`[migrate] renamed ${renamed.rows.length} shop(s) to Kinyozi Management System.`);
     }
   } finally {
     client.release();
