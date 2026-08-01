@@ -57,9 +57,11 @@
   }
   .style-card:hover{border-color:var(--amber);transform:translateY(-3px);}
   .style-icon{
-    width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-    font-size:20px;margin-bottom:14px;background:linear-gradient(135deg,var(--barber-red),var(--amber));
+    width:64px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    margin-bottom:14px;background:linear-gradient(135deg,var(--barber-red),var(--amber));
+    overflow:hidden;padding:4px;
   }
+  .style-icon svg{width:100%;height:100%;}
   .style-name{font-weight:700;font-size:14.5px;margin-bottom:4px;}
   .style-desc{font-size:12px;color:var(--chalk-dim);line-height:1.5;margin-bottom:12px;min-height:36px;}
   .style-tags{display:flex;gap:6px;flex-wrap:wrap;}
@@ -72,7 +74,8 @@
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);align-items:center;justify-content:center;z-index:70;padding:20px;}
   .modal-overlay.open{display:flex;}
   .detail-modal{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:16px;padding:28px;width:420px;max-width:100%;max-height:88vh;overflow-y:auto;}
-  .detail-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(135deg,var(--barber-red),var(--amber));margin-bottom:16px;}
+  .detail-icon{width:84px;height:68px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--barber-red),var(--amber));margin-bottom:16px;overflow:hidden;padding:6px;}
+  .detail-icon svg{width:100%;height:100%;}
   .detail-name{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.5px;margin-bottom:4px;}
   .detail-cat{font-size:11.5px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px;}
   .detail-section{margin-bottom:16px;}
@@ -157,34 +160,101 @@
 
 <script>
   const STYLES = [
-    { name: 'Low Taper Fade', cat: 'Fades', icon: '✂️', desc: 'Hair gradually shortens from the top down to the skin near the hairline, kept subtle and close to the ears.', maint: 'Every 2–3 weeks to keep the fade line crisp.', tip: 'The most requested cut in Kenyan barbershops — clean, professional, works with any hair length on top.', tags: ['Trending'] },
-    { name: 'Mid Fade', cat: 'Fades', icon: '✂️', desc: 'The fade starts higher, around temple level, for more contrast between the top and sides.', maint: 'Every 2–3 weeks.', tip: 'A safe middle ground between subtle and sharp — pairs well with a beard line-up.', tags: [] },
-    { name: 'High Top Fade', cat: 'Fades', icon: '✂️', desc: 'Fade starts high on the sides, leaving significant length and volume on top for shape-ups or a box/flat top.', maint: 'Every 2 weeks — grows out noticeably fast.', tip: 'A classic Black American style that\'s made a strong comeback; needs a skilled hand for straight edges.', tags: ['Trending'] },
-    { name: 'Skin (Bald) Fade', cat: 'Fades', icon: '✂️', desc: 'Fades all the way down to bare skin at the bottom, for maximum contrast against the top.', maint: 'Every 1–2 weeks to keep the skin line sharp.', tip: 'Requires the most upkeep of any fade — ask your barber how often before committing.', tags: ['Trending'] },
-    { name: 'Burst Fade', cat: 'Fades', icon: '✂️', desc: 'Fades in a semi-circle around the ear only, leaving length at the back and top — often paired with a mohawk or curls.', maint: 'Every 2–3 weeks.', tip: 'A more stylized option that photographs well; popular with curly and coily hair textures.', tags: [] },
-    { name: 'Drop Fade', cat: 'Fades', icon: '✂️', desc: 'The fade line curves ("drops") behind the ear instead of staying straight, following the head\'s natural shape.', maint: 'Every 2–3 weeks.', tip: 'Flattering for most head shapes; ask for it "with a drop" specifically or you\'ll get a standard fade.', tags: [] },
+    { name: 'Low Taper Fade', cat: 'Fades', icon: '✂️', v:{top:'flat',cap:0.35,fade:0.3}, desc: 'Hair gradually shortens from the top down to the skin near the hairline, kept subtle and close to the ears.', maint: 'Every 2–3 weeks to keep the fade line crisp.', tip: 'The most requested cut in Kenyan barbershops — clean, professional, works with any hair length on top.', tags: ['Trending'] },
+    { name: 'Mid Fade', cat: 'Fades', icon: '✂️', v:{top:'flat',cap:0.4,fade:0.5}, desc: 'The fade starts higher, around temple level, for more contrast between the top and sides.', maint: 'Every 2–3 weeks.', tip: 'A safe middle ground between subtle and sharp — pairs well with a beard line-up.', tags: [] },
+    { name: 'High Top Fade', cat: 'Fades', icon: '✂️', v:{top:'flat',cap:0.75,fade:0.65}, desc: 'Fade starts high on the sides, leaving significant length and volume on top for shape-ups or a box/flat top.', maint: 'Every 2 weeks — grows out noticeably fast.', tip: 'A classic Black American style that\'s made a strong comeback; needs a skilled hand for straight edges.', tags: ['Trending'] },
+    { name: 'Skin (Bald) Fade', cat: 'Fades', icon: '✂️', v:{top:'flat',cap:0.35,fade:0.95}, desc: 'Fades all the way down to bare skin at the bottom, for maximum contrast against the top.', maint: 'Every 1–2 weeks to keep the skin line sharp.', tip: 'Requires the most upkeep of any fade — ask your barber how often before committing.', tags: ['Trending'] },
+    { name: 'Burst Fade', cat: 'Fades', icon: '✂️', v:{top:'flat',cap:0.5,fade:0.55,burst:true}, desc: 'Fades in a semi-circle around the ear only, leaving length at the back and top — often paired with a mohawk or curls.', maint: 'Every 2–3 weeks.', tip: 'A more stylized option that photographs well; popular with curly and coily hair textures.', tags: [] },
+    { name: 'Drop Fade', cat: 'Fades', icon: '✂️', v:{top:'flat',cap:0.4,fade:0.5,drop:true}, desc: 'The fade line curves ("drops") behind the ear instead of staying straight, following the head\'s natural shape.', maint: 'Every 2–3 weeks.', tip: 'Flattering for most head shapes; ask for it "with a drop" specifically or you\'ll get a standard fade.', tags: [] },
 
-    { name: 'Afro', cat: 'Natural & Afro', icon: '🌀', desc: 'Natural coily hair grown out and shaped into a rounded silhouette, unstraightened.', maint: 'Regular trims to maintain shape; daily moisturizing.', tip: 'A statement style with deep cultural roots — many barbershops offer an "afro shape-up" rather than a full cut.', tags: ['Low maintenance'] },
-    { name: 'Taper Afro', cat: 'Natural & Afro', icon: '🌀', desc: 'An afro on top with a tapered, faded sides and back for a cleaner overall silhouette.', maint: 'Sides every 2–3 weeks; top left to grow.', tip: 'A great middle ground for clients who want natural texture but a neater finish.', tags: [] },
-    { name: 'Twist Out', cat: 'Natural & Afro', icon: '🌀', desc: 'Hair is two-strand twisted, left to set, then unraveled for a defined, voluminous curl pattern.', maint: 'Re-twisted every 1–2 weeks to maintain definition.', tip: 'More of a styling service than a cut — check if your barbershop offers twist services separately from haircuts.', tags: ['Low maintenance'] },
-    { name: 'Fro-Hawk', cat: 'Natural & Afro', icon: '🌀', desc: 'A mohawk silhouette using natural afro-textured hair down the center, faded or shaved on the sides.', maint: 'Sides every 2 weeks.', tip: 'Bold and distinctive — best discussed with reference photos before your barber starts cutting.', tags: [] },
+    { name: 'Afro', cat: 'Natural & Afro', icon: '🌀', v:{top:'afro',cap:1,fade:0}, desc: 'Natural coily hair grown out and shaped into a rounded silhouette, unstraightened.', maint: 'Regular trims to maintain shape; daily moisturizing.', tip: 'A statement style with deep cultural roots — many barbershops offer an "afro shape-up" rather than a full cut.', tags: ['Low maintenance'] },
+    { name: 'Taper Afro', cat: 'Natural & Afro', icon: '🌀', v:{top:'afro',cap:0.85,fade:0.4}, desc: 'An afro on top with a tapered, faded sides and back for a cleaner overall silhouette.', maint: 'Sides every 2–3 weeks; top left to grow.', tip: 'A great middle ground for clients who want natural texture but a neater finish.', tags: [] },
+    { name: 'Twist Out', cat: 'Natural & Afro', icon: '🌀', v:{top:'afro',cap:1,fade:0,textured:true}, desc: 'Hair is two-strand twisted, left to set, then unraveled for a defined, voluminous curl pattern.', maint: 'Re-twisted every 1–2 weeks to maintain definition.', tip: 'More of a styling service than a cut — check if your barbershop offers twist services separately from haircuts.', tags: ['Low maintenance'] },
+    { name: 'Fro-Hawk', cat: 'Natural & Afro', icon: '🌀', v:{top:'mohawk',cap:1,fade:0.85}, desc: 'A mohawk silhouette using natural afro-textured hair down the center, faded or shaved on the sides.', maint: 'Sides every 2 weeks.', tip: 'Bold and distinctive — best discussed with reference photos before your barber starts cutting.', tags: [] },
 
-    { name: 'Cornrows (Straight Back)', cat: 'Braids & Twists', icon: '🧵', desc: 'Hair braided close to the scalp in straight rows from front to back.', maint: 'Lasts 2–4 weeks with proper care before re-braiding.', tip: 'One of the most requested protective styles — book extra time, a full head typically takes 1–2 hours.', tags: ['Low maintenance'] },
-    { name: 'Box Braids', cat: 'Braids & Twists', icon: '🧵', desc: 'Individual square-parted braids, often done with extensions for length and thickness.', maint: 'Lasts 4–8 weeks.', tip: 'A longer appointment — many shops recommend booking this as its own slot rather than a walk-in.', tags: [] },
-    { name: 'Two-Strand Twists', cat: 'Braids & Twists', icon: '🧵', desc: 'Two sections of hair twisted around each other from root to tip, without extensions.', maint: 'Lasts 2–4 weeks.', tip: 'Gentler on the scalp than braiding — a popular option for finer or shorter natural hair.', tags: ['Low maintenance'] },
-    { name: 'Feed-in Braids', cat: 'Braids & Twists', icon: '🧵', desc: 'Braids that start thin near the hairline and gradually incorporate more hair (or extensions) as they go, for a natural taper.', maint: 'Lasts 3–6 weeks.', tip: 'Looks more natural at the root than standard box braids — a common upgrade request.', tags: ['Trending'] },
+    { name: 'Cornrows (Straight Back)', cat: 'Braids & Twists', icon: '🧵', v:{top:'braids',cap:0.55,fade:0.1}, desc: 'Hair braided close to the scalp in straight rows from front to back.', maint: 'Lasts 2–4 weeks with proper care before re-braiding.', tip: 'One of the most requested protective styles — book extra time, a full head typically takes 1–2 hours.', tags: ['Low maintenance'] },
+    { name: 'Box Braids', cat: 'Braids & Twists', icon: '🧵', v:{top:'braids',cap:0.9,fade:0}, desc: 'Individual square-parted braids, often done with extensions for length and thickness.', maint: 'Lasts 4–8 weeks.', tip: 'A longer appointment — many shops recommend booking this as its own slot rather than a walk-in.', tags: [] },
+    { name: 'Two-Strand Twists', cat: 'Braids & Twists', icon: '🧵', v:{top:'twists',cap:0.7,fade:0.1}, desc: 'Two sections of hair twisted around each other from root to tip, without extensions.', maint: 'Lasts 2–4 weeks.', tip: 'Gentler on the scalp than braiding — a popular option for finer or shorter natural hair.', tags: ['Low maintenance'] },
+    { name: 'Feed-in Braids', cat: 'Braids & Twists', icon: '🧵', v:{top:'braids',cap:0.6,fade:0.3}, desc: 'Braids that start thin near the hairline and gradually incorporate more hair (or extensions) as they go, for a natural taper.', maint: 'Lasts 3–6 weeks.', tip: 'Looks more natural at the root than standard box braids — a common upgrade request.', tags: ['Trending'] },
 
-    { name: '360 Waves', cat: 'Waves', icon: '🌊', desc: 'Short hair brushed consistently in a circular pattern to train a rippling wave texture across the whole head.', maint: 'Daily brushing (durag/wave cap at night) plus a trim every 2–3 weeks.', tip: 'The cut alone won\'t give waves — ask your barber for wave-friendly length and brushing tips.', tags: ['Trending'] },
-    { name: 'Brush Waves', cat: 'Waves', icon: '🌊', desc: 'A looser, less uniform wave pattern than 360s, usually with a bit more length on top.', maint: 'Regular brushing; trims every 3 weeks.', tip: 'A lower-commitment entry point if you\'re not ready for full 360 wave maintenance.', tags: ['Low maintenance'] },
+    { name: '360 Waves', cat: 'Waves', icon: '🌊', v:{top:'waves',cap:0.3,fade:0.3}, desc: 'Short hair brushed consistently in a circular pattern to train a rippling wave texture across the whole head.', maint: 'Daily brushing (durag/wave cap at night) plus a trim every 2–3 weeks.', tip: 'The cut alone won\'t give waves — ask your barber for wave-friendly length and brushing tips.', tags: ['Trending'] },
+    { name: 'Brush Waves', cat: 'Waves', icon: '🌊', v:{top:'waves',cap:0.35,fade:0.15}, desc: 'A looser, less uniform wave pattern than 360s, usually with a bit more length on top.', maint: 'Regular brushing; trims every 3 weeks.', tip: 'A lower-commitment entry point if you\'re not ready for full 360 wave maintenance.', tags: ['Low maintenance'] },
 
-    { name: 'Beard Line-Up', cat: 'Beard Styles', icon: '🧔', desc: 'Sharp, straight edges cut into the beard along the cheek, neck, and jaw lines.', maint: 'Every 1–2 weeks to keep lines crisp.', tip: 'Usually add-on pricing at most shops — worth asking if it\'s bundled with a haircut.', tags: [] },
-    { name: 'Full Beard Sculpt', cat: 'Beard Styles', icon: '🧔', desc: 'The whole beard is shaped, trimmed to an even length, and defined with hot towel and razor work.', maint: 'Every 2–3 weeks.', tip: 'A hot towel shave add-on is common in Kenyan barbershops and elevates the finish noticeably.', tags: [] },
-    { name: 'Goatee', cat: 'Beard Styles', icon: '🧔', desc: 'Chin-focused facial hair, cheeks and neck shaved clean, sometimes connected to a thin mustache.', maint: 'Every 1–2 weeks.', tip: 'Lower-maintenance than a full beard while still framing the jawline.', tags: ['Low maintenance'] },
+    { name: 'Beard Line-Up', cat: 'Beard Styles', icon: '🧔', v:{top:'flat',cap:0.4,fade:0.2,beard:'lineup'}, desc: 'Sharp, straight edges cut into the beard along the cheek, neck, and jaw lines.', maint: 'Every 1–2 weeks to keep lines crisp.', tip: 'Usually add-on pricing at most shops — worth asking if it\'s bundled with a haircut.', tags: [] },
+    { name: 'Full Beard Sculpt', cat: 'Beard Styles', icon: '🧔', v:{top:'flat',cap:0.4,fade:0.2,beard:'full'}, desc: 'The whole beard is shaped, trimmed to an even length, and defined with hot towel and razor work.', maint: 'Every 2–3 weeks.', tip: 'A hot towel shave add-on is common in Kenyan barbershops and elevates the finish noticeably.', tags: [] },
+    { name: 'Goatee', cat: 'Beard Styles', icon: '🧔', v:{top:'flat',cap:0.4,fade:0.2,beard:'goatee'}, desc: 'Chin-focused facial hair, cheeks and neck shaved clean, sometimes connected to a thin mustache.', maint: 'Every 1–2 weeks.', tip: 'Lower-maintenance than a full beard while still framing the jawline.', tags: ['Low maintenance'] },
 
-    { name: 'Caesar Cut', cat: 'Classic & Kids', icon: '👦', desc: 'Short, horizontally-fringed hair combed forward, uniform length all around.', maint: 'Every 3–4 weeks.', tip: 'A timeless, low-fuss option that works well for formal or corporate settings.', tags: ['Low maintenance'] },
-    { name: 'Buzz Cut', cat: 'Classic & Kids', icon: '👦', desc: 'Uniform, very short length all over using clippers with no fading or blending.', maint: 'Every 3–4 weeks.', tip: 'The fastest, most affordable cut on most price lists — a good default walk-in choice.', tags: ['Low maintenance'] },
-    { name: 'Kids Line Up', cat: 'Classic & Kids', icon: '👦', desc: 'A simple shape-up with a clean hairline and light fade, scaled down for younger clients.', maint: 'Every 2–3 weeks.', tip: 'Many shops price this separately and keep sessions shorter for younger kids.', tags: [] }
+    { name: 'Caesar Cut', cat: 'Classic & Kids', icon: '👦', v:{top:'flat',cap:0.3,fade:0}, desc: 'Short, horizontally-fringed hair combed forward, uniform length all around.', maint: 'Every 3–4 weeks.', tip: 'A timeless, low-fuss option that works well for formal or corporate settings.', tags: ['Low maintenance'] },
+    { name: 'Buzz Cut', cat: 'Classic & Kids', icon: '👦', v:{top:'flat',cap:0.15,fade:0}, desc: 'Uniform, very short length all over using clippers with no fading or blending.', maint: 'Every 3–4 weeks.', tip: 'The fastest, most affordable cut on most price lists — a good default walk-in choice.', tags: ['Low maintenance'] },
+    { name: 'Kids Line Up', cat: 'Classic & Kids', icon: '👦', v:{top:'flat',cap:0.35,fade:0.35}, desc: 'A simple shape-up with a clean hairline and light fade, scaled down for younger clients.', maint: 'Every 2–3 weeks.', tip: 'Many shops price this separately and keep sessions shorter for younger kids.', tags: [] }
   ];
+
+  // ---- Stylized silhouette icon generator (no photos — original SVG art per cut) ----
+  function headIconSVG(v) {
+    if (!v) return '';
+    const hair = 'var(--ink)';
+    const skin = 'var(--chalk)';
+    const shirt = 'rgba(27,27,29,0.55)';
+    const capH = 13 * (v.cap !== undefined ? v.cap : 0.4); // peak height above ear line
+    const earY = 23;
+
+    let cap = '';
+    if (v.top === 'afro') {
+      const r = 12 + 6 * (v.cap || 1);
+      cap = `<circle cx="32" cy="${22 - r * 0.55}" r="${r}" fill="${hair}"/>`;
+      if (v.textured) {
+        cap += Array.from({length:10}).map((_,i) => {
+          const ang = (i / 10) * Math.PI * 2;
+          const cx = 32 + Math.cos(ang) * r * 0.6;
+          const cy = (22 - r * 0.55) + Math.sin(ang) * r * 0.6;
+          return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1.1" fill="${skin}" opacity="0.35"/>`;
+        }).join('');
+      }
+    } else if (v.top === 'mohawk') {
+      cap = `<path d="M28,${22-capH*1.6} Q32,${22-capH*1.9} 36,${22-capH*1.6} L37,22 Q32,26 27,22 Z" fill="${hair}"/>`;
+    } else if (v.top === 'braids' || v.top === 'twists') {
+      cap = `<path d="M18,23 Q32,${23-capH} 46,23 Q32,${23-capH*0.55} 18,23 Z" fill="${hair}"/>`;
+      const lines = v.top === 'twists' ? 4 : 6;
+      cap += Array.from({length:lines}).map((_,i) => {
+        const t = i / (lines - 1);
+        const x = 19 + t * 26;
+        const peak = 23 - capH * (0.5 + 0.4 * Math.sin(t * Math.PI));
+        return `<path d="M${x.toFixed(1)},22 Q${x.toFixed(1)},${peak.toFixed(1)} ${(x+2).toFixed(1)},22" stroke="${skin}" stroke-width="0.7" fill="none" opacity="0.5"/>`;
+      }).join('');
+    } else if (v.top === 'waves') {
+      cap = `<path d="M18,23 Q32,${23-capH} 46,23 Q32,${23-capH*0.55} 18,23 Z" fill="${hair}"/>`;
+      cap += [0,1,2].map(i => {
+        const y = 23 - capH*0.35 - i*3;
+        return `<path d="M${20+i*2},${y.toFixed(1)} Q32,${(y-4).toFixed(1)} ${44-i*2},${y.toFixed(1)}" stroke="${skin}" stroke-width="0.6" fill="none" opacity="0.4"/>`;
+      }).join('');
+    } else {
+      cap = `<path d="M18,23 Q32,${(23-capH).toFixed(1)} 46,23 Q32,${(23-capH*0.5).toFixed(1)} 18,23 Z" fill="${hair}"/>`;
+    }
+
+    const fadeOpacity = 1 - (v.fade !== undefined ? v.fade : 0);
+    const sides = `
+      <path d="M18,${earY} Q14,30 18,37 L21,37 Q18,30 20,${earY+1} Z" fill="${hair}" opacity="${fadeOpacity}"/>
+      <path d="M46,${earY} Q50,30 46,37 L43,37 Q46,30 44,${earY+1} Z" fill="${hair}" opacity="${fadeOpacity}"/>
+      ${v.burst ? `<circle cx="18" cy="${earY+2}" r="4" fill="${hair}" opacity="${fadeOpacity*0.7}"/><circle cx="46" cy="${earY+2}" r="4" fill="${hair}" opacity="${fadeOpacity*0.7}"/>` : ''}
+      ${v.drop ? `<path d="M17,${earY} Q12,33 17,40" stroke="${hair}" stroke-width="1.4" fill="none" opacity="${fadeOpacity}"/>` : ''}
+    `;
+
+    let beard = '';
+    if (v.beard === 'goatee') beard = `<ellipse cx="32" cy="39" rx="3.5" ry="3" fill="${hair}"/>`;
+    if (v.beard === 'lineup') beard = `<path d="M21,35 Q32,41 43,35" stroke="${hair}" stroke-width="2" fill="none"/>`;
+    if (v.beard === 'full') beard = `<path d="M19,33 Q32,45 45,33 L43,38 Q32,43 21,38 Z" fill="${hair}"/>`;
+
+    return `<svg viewBox="0 0 64 50" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6,50 Q32,37 58,50 L58,52 L6,52 Z" fill="${shirt}"/>
+      <rect x="27" y="31" width="10" height="10" fill="${skin}"/>
+      <circle cx="32" cy="22" r="13" fill="${skin}"/>
+      <circle cx="18" cy="22" r="2.2" fill="${skin}"/>
+      <circle cx="46" cy="22" r="2.2" fill="${skin}"/>
+      ${sides}
+      ${cap}
+      ${beard}
+    </svg>`;
+  }
 
   const categories = ['All', ...Array.from(new Set(STYLES.map(s => s.cat)))];
   let activeCat = 'All';
@@ -224,7 +294,7 @@
 
     grid.innerHTML = filtered.map((s, i) => `
       <div class="style-card" onclick="openDetail(${STYLES.indexOf(s)})">
-        <div class="style-icon">${s.icon}</div>
+        <div class="style-icon">${headIconSVG(s.v)}</div>
         <div class="style-name">${s.name}</div>
         <div class="style-desc">${s.desc}</div>
         <div class="style-tags">
@@ -237,7 +307,7 @@
   function openDetail(idx) {
     const s = STYLES[idx];
     currentDetail = s;
-    document.getElementById('dIcon').textContent = s.icon;
+    document.getElementById('dIcon').innerHTML = headIconSVG(s.v);
     document.getElementById('dName').textContent = s.name;
     document.getElementById('dCat').textContent = s.cat;
     document.getElementById('dDesc').textContent = s.desc;
