@@ -27,6 +27,8 @@
   .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--chalk);cursor:pointer;text-decoration:none;transition:background .15s ease;}
   .rail-item:hover{background:rgba(27,27,29,.5);}
   .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
+  .logout-item{margin-top:10px;color:var(--barber-red);}
+  .logout-item:hover{background:rgba(200,53,46,.15);}
   .rail-toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk);padding:12px 20px;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .2s ease, transform .2s ease;pointer-events:none;z-index:100;}
   .rail-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
@@ -89,6 +91,7 @@
       <a class="rail-item" href="inventory.html" title="Inventory">📦</a>
       <a class="rail-item" href="reports.html" title="Reports">📈</a>
       <a class="rail-item" href="settings.html" title="Settings">⚙</a>
+      <div class="rail-item logout-item" title="Logout" onclick="doLogout()">⏻</div>
     </div>
   </nav>
   <div class="rail-toast" id="railToast"></div>
@@ -97,7 +100,7 @@
     <div class="topbar">
       <div>
         <div class="shop-name">APPOINTMENTS</div>
-        <div class="shop-sub">Kinyozi Ndogo · bookings by day</div>
+        <div class="shop-sub">Kinyozi Management System · bookings by day</div>
       </div>
       <button class="btn-add" onclick="openAddModal()">+ New Appointment</button>
     </div>

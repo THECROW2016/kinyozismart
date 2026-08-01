@@ -113,6 +113,8 @@
     background:var(--ink);
     box-shadow:0 0 0 1.5px var(--amber);
   }
+  .logout-item{margin-top:10px;color:var(--barber-red);}
+  .logout-item:hover{background:rgba(200,53,46,.15);}
   .rail-item .tip{
     display:none;
   }
@@ -377,6 +379,7 @@
       <a class="rail-item" href="inventory.html" title="Inventory">📦</a>
       <a class="rail-item" href="reports.html" title="Reports">📈</a>
       <a class="rail-item" href="settings.html" title="Settings">⚙</a>
+      <div class="rail-item logout-item" title="Logout" onclick="doLogout()">⏻</div>
     </div>
   </nav>
   <div class="rail-toast" id="railToast"></div>
@@ -384,7 +387,7 @@
   <main>
     <div class="topbar">
       <div>
-        <div class="shop-name">KINYOZI NDOGO</div>
+        <div class="shop-name">KINYOZI MANAGEMENT SYSTEM</div>
         <div class="shop-sub">Ronald Ngala St, Nairobi CBD</div>
       </div>
       <div class="topbar-right">

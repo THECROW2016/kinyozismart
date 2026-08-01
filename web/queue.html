@@ -35,6 +35,8 @@
   .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--chalk);cursor:pointer;text-decoration:none;transition:background .15s ease;}
   .rail-item:hover{background:rgba(27,27,29,.5);}
   .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
+  .logout-item{margin-top:10px;color:var(--barber-red);}
+  .logout-item:hover{background:rgba(200,53,46,.15);}
   .rail-toast{
     position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
     background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk);
@@ -129,6 +131,7 @@
       <a class="rail-item" href="inventory.html" title="Inventory">📦</a>
       <a class="rail-item" href="reports.html" title="Reports">📈</a>
       <a class="rail-item" href="settings.html" title="Settings">⚙</a>
+      <div class="rail-item logout-item" title="Logout" onclick="doLogout()">⏻</div>
     </div>
   </nav>
   <div class="rail-toast" id="railToast"></div>
@@ -137,7 +140,7 @@
     <div class="topbar">
       <div>
         <div class="shop-name">WAITING BENCH</div>
-        <div class="shop-sub">Kinyozi Ndogo · live queue</div>
+        <div class="shop-sub">Kinyozi Management System · live queue</div>
       </div>
       <button class="btn-add">+ Add Walk-In</button>
     </div>

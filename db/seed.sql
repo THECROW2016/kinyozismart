@@ -4,7 +4,7 @@
 -- ============================================================
 
 INSERT INTO shops (id, name, location, phone, opening_time, closing_time, receipt_footer)
-VALUES ('11111111-1111-1111-1111-111111111111', 'Kinyozi Ndogo', 'Ronald Ngala St, Nairobi CBD', '0700111222', '08:00', '20:00', 'Asante kwa kutuchagua!');
+VALUES ('11111111-1111-1111-1111-111111111111', 'Kinyozi Management System', 'Ronald Ngala St, Nairobi CBD', '0700111222', '08:00', '20:00', 'Asante kwa kutuchagua!');
 
 -- Staff / barbers
 INSERT INTO users (id, shop_id, full_name, phone, password_hash, role) VALUES
