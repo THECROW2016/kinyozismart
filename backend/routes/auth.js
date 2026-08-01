@@ -3,15 +3,16 @@ const router = express.Router();
 const pool = require('../db');
 const { verifyPin } = require('../utils/pin');
 
-// GET /api/auth/staff?shop_id=...&group=admin|user
-// admin = owner/manager, user = barber/receptionist
+// GET /api/auth/staff?shop_id=...&group=admin|manager
+// The app has exactly two account types: admin (owner — sees and manages
+// everything) and manager (runs day-to-day operations, can add but not delete).
 router.get('/staff', async (req, res) => {
   const { shop_id, group } = req.query;
   if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
 
-  const roles = group === 'admin' ? ['owner', 'manager']
-    : group === 'user' ? ['barber', 'receptionist']
-    : ['owner', 'manager', 'receptionist', 'barber'];
+  const roles = group === 'admin' ? ['owner']
+    : group === 'manager' ? ['manager']
+    : ['owner', 'manager'];
 
   try {
     const { rows } = await pool.query(

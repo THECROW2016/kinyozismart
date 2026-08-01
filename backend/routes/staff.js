@@ -48,18 +48,19 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/staff -> register a new staff member (barber, receptionist, or manager)
-// body: { shop_id, full_name, phone, role, pin, photo_url?, specialties?: string[], commission_rate? }
+// Only 'manager' accounts log into the app, so PIN is only required for that role.
+// body: { shop_id, full_name, phone, role, pin?, photo_url?, specialties?: string[], commission_rate? }
 router.post('/', async (req, res) => {
   const { shop_id, full_name, phone, role, pin, photo_url, specialties, commission_rate } = req.body;
   const allowedRoles = ['barber', 'receptionist', 'manager'];
-  if (!shop_id || !full_name || !phone || !role || !pin) {
-    return res.status(400).json({ error: 'shop_id, full_name, phone, role, and pin are required' });
+  if (!shop_id || !full_name || !phone || !role) {
+    return res.status(400).json({ error: 'shop_id, full_name, phone, and role are required' });
   }
   if (!allowedRoles.includes(role)) {
     return res.status(400).json({ error: `role must be one of ${allowedRoles.join(', ')}` });
   }
-  if (!/^\d{4}$/.test(String(pin))) {
-    return res.status(400).json({ error: 'pin must be exactly 4 digits' });
+  if (role === 'manager' && !/^\d{4}$/.test(String(pin))) {
+    return res.status(400).json({ error: 'A 4-digit login PIN is required for manager accounts' });
   }
 
   const client = await pool.connect();
@@ -69,7 +70,7 @@ router.post('/', async (req, res) => {
     const user = await client.query(
       `INSERT INTO users (shop_id, full_name, phone, password_hash, pin_hash, role, photo_url)
        VALUES ($1,$2,$3,'',$4,$5,$6) RETURNING id, full_name, phone, role, photo_url`,
-      [shop_id, full_name, phone, hashPin(pin), role, photo_url || null]
+      [shop_id, full_name, phone, pin ? hashPin(pin) : null, role, photo_url || null]
     );
 
     if (role === 'barber') {

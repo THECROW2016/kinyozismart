@@ -19,24 +19,17 @@
     window.location.href = 'login.html';
   };
 
-  // Role-based access: which pages each role is allowed to open.
-  // owner = full admin access. manager = operational + reporting, no shop settings.
-  // barber/receptionist = day-to-day front-desk tools only.
+  // Role-based access: the app has exactly two account types.
+  // owner (admin) = full visibility into everything the business does.
+  // manager = runs day-to-day operations, can add records everywhere except
+  // Settings (shop configuration / M-Pesa credentials stay admin-only).
   const PAGE_ACCESS = {
-    'dashboard.html':    ['owner', 'manager'],
-    'staff.html':        ['owner', 'manager'],
-    'inventory.html':    ['owner', 'manager'],
-    'reports.html':      ['owner', 'manager'],
-    'settings.html':     ['owner'],
-    'pos.html':          ['owner', 'manager', 'barber', 'receptionist'],
-    'queue.html':        ['owner', 'manager', 'barber', 'receptionist'],
-    'appointments.html': ['owner', 'manager', 'barber', 'receptionist'],
-    'customers.html':    ['owner', 'manager', 'barber', 'receptionist'],
-    'styles.html':       ['owner', 'manager', 'barber', 'receptionist']
+    'settings.html': ['owner']
+    // every other page is open to both owner and manager
   };
 
   function homeFor(role) {
-    return (role === 'owner' || role === 'manager') ? 'dashboard.html' : 'queue.html';
+    return 'dashboard.html';
   }
 
   if (session && !isLoginPage && !isLanding) {

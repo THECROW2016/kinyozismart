@@ -64,22 +64,19 @@ Demo PINs seeded by `migrate.js`:
 
 | Name | Role | PIN |
 |---|---|---|
-| Shop Owner | owner (admin) | `1111` |
+| Shop Owner | admin (owner) | `1111` |
 | Store Manager | manager | `1212` |
-| Kevin Mwangi | barber | `2222` |
-| Njoroge Kamau | barber | `3333` |
-| Faith Wanjiku | barber | `4444` |
-| Brian Otieno | barber | `5555` |
 
 Session is stored in the browser (`localStorage`) after login; every other page redirects to `login.html` if there's no session. PINs are hashed with Node's built-in `scrypt` (not bcrypt, to avoid a native dependency) — fine for a low-stakes PIN, not intended as enterprise-grade auth.
 
-### Roles: Admin (owner) vs Manager vs Staff
+### Roles: exactly two account types
 
-Access is now split by role, enforced client-side in `auth-guard.js` (hides nav links + redirects on direct navigation for pages a role can't use):
+- **Admin (owner):** full visibility into everything the business does — every page, including Settings.
+- **Manager:** runs day-to-day operations — every page except Settings. Can add records (staff, appointments, products, expenses, etc.) but the app has no delete functionality anywhere, by design, so this is naturally "add, not delete."
 
-- **Owner (admin):** everything — Dashboard, POS, Queue, Appointments, Customers, Staff (including registering new staff), Inventory, Styles, Reports, Settings.
-- **Manager:** Dashboard, POS, Queue, Appointments, Customers, Staff (view only, no registration), Inventory, Styles, Reports — no Settings.
-- **Barber / Receptionist:** POS, Queue, Appointments, Customers, Styles only.
+Barbers and receptionists are still real records (needed for POS attribution, commissions, and specialties) but **don't log into the app individually** — only Admin and Manager accounts do. When registering a barber/receptionist from the Staff page, no PIN is requested; when registering a manager, a PIN is required.
+
+This is enforced client-side in `auth-guard.js` (hides the Settings nav link + redirects on direct navigation for the Admin-only page) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
 
 This is client-side gating, matching the PIN system's overall security level — not a substitute for real server-side authorization if this goes into production with real money.
 

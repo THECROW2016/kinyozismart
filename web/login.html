@@ -96,7 +96,7 @@
   const SHOP_ID = '11111111-1111-1111-1111-111111111111';
   const API_BASE = window.location.origin + '/api';
   const params = new URLSearchParams(window.location.search);
-  const group = params.get('group') || 'user';
+  const group = params.get('group') || 'manager';
   let selectedUser = null;
   let pin = '';
 
@@ -111,7 +111,7 @@
   function renderPicker(staff) {
     const panel = document.getElementById('panel');
     panel.innerHTML = `
-      <div class="group-title">${group === 'admin' ? 'ADMIN LOGIN' : 'STAFF LOGIN'}</div>
+      <div class="group-title">${group === 'admin' ? 'ADMIN LOGIN' : 'MANAGER LOGIN'}</div>
       <div class="group-sub">Tap your name to continue</div>
       <div class="staff-grid">
         ${staff.map(s => `
