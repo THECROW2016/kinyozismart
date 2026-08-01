@@ -6,9 +6,7 @@ A point-of-sale, booking, and shop-management system for barbershops and salons 
 
 - [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) — full product specification: modules, Kenya-specific requirements, architecture, and MVP roadmap
 - [`db/schema.sql`](db/schema.sql) — PostgreSQL database schema (multi-branch ready)
-- [`web/dashboard.html`](web/dashboard.html) — dashboard UI mockup
-- [`web/pos.html`](web/pos.html) — POS / New Sale screen mockup
-- [`web/queue.html`](web/queue.html) — walk-in queue ("Waiting Bench") screen mockup
+- [`web/`](web/) — Dashboard, POS, Queue, Appointments, Customers, Staff, Inventory, Styles, Reports, Expenses, and Settings pages, plus the landing/login pages
 
 ## Flagship feature: the walk-in queue
 
@@ -77,6 +75,15 @@ Session is stored in the browser (`localStorage`) after login; every other page 
 Barbers and receptionists are still real records (needed for POS attribution, commissions, and specialties) but **don't log into the app individually** — only Admin and Manager accounts do. When registering a barber/receptionist from the Staff page, no PIN is requested; when registering a manager, a PIN is required.
 
 This is enforced client-side in `auth-guard.js` (hides the Settings nav link + redirects on direct navigation for the Admin-only page) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
+
+### Expenses
+
+A dedicated Expenses page tracks rent, utilities, salaries, supplies, and other costs (category, description, amount, date), feeding into the profit report (`revenue − expenses − commissions`). Both Admin and Manager can add and delete expense entries.
+
+### Look & feel
+
+- Sidebar icons are hand-drawn inline SVGs (no emoji) for a consistent, sleek look across every page.
+- The Manager Login screen (`login.html?group=manager`) uses a barbershop-themed photo as a background wallpaper; Admin Login stays on the plain dark theme.
 
 This is client-side gating, matching the PIN system's overall security level — not a substitute for real server-side authorization if this goes into production with real money.
 

@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>BarberOS — Reports</title>
+<title>BarberOS — Expenses</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root{
     --ink:#1B1B1D; --ink-raised:#242426; --ink-line:#3A3936;
@@ -25,43 +24,58 @@
   .rail::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(27,27,29,.15), rgba(27,27,29,.55) 60%, rgba(27,27,29,.85));}
   .rail-logo{position:relative;z-index:1;width:40px;height:40px;border-radius:50%;background:var(--ink);border:2px solid var(--chalk);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;margin-bottom:18px;flex-shrink:0;}
   .rail-nav{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;}
-  .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--chalk);cursor:pointer;text-decoration:none;transition:background .15s ease;}
+  .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--chalk);cursor:pointer;text-decoration:none;transition:background .15s ease;}
+  .rail-item svg{width:19px;height:19px;}
   .rail-item:hover{background:rgba(27,27,29,.5);}
   .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
   .logout-item{margin-top:10px;color:var(--barber-red);}
   .logout-item:hover{background:rgba(200,53,46,.15);}
-  .rail-item svg{width:19px;height:19px;flex-shrink:0;}
   .rail-toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk);padding:12px 20px;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .2s ease, transform .2s ease;pointer-events:none;z-index:100;}
   .rail-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-  main{padding:28px 36px 60px;max-width:1200px;}
-  .topbar{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+  main{padding:28px 36px 60px;max-width:1000px;}
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px;}
   .shop-name{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;}
   .shop-sub{color:var(--chalk-dim);font-size:13px;margin-top:4px;}
+  .btn-add{background:var(--amber);color:var(--ink);border:none;border-radius:10px;padding:11px 18px;font-size:13.5px;font-weight:700;cursor:pointer;}
 
-  .range-tabs{display:flex;gap:8px;margin-bottom:22px;}
-  .range-tab{background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk-dim);padding:8px 16px;border-radius:999px;font-size:12.5px;cursor:pointer;}
-  .range-tab.active{border-color:var(--amber);color:var(--amber);background:rgba(232,163,61,.1);}
-
-  .summary-strip{display:grid;grid-template-columns:repeat(auto-fit, minmax(160px,1fr));gap:14px;margin-bottom:22px;}
+  .summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px;}
   .summary-card{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:16px 18px;}
   .summary-card .l{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--chalk-dim);margin-bottom:8px;}
-  .summary-card .n{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;}
-  .summary-card.profit .n{color:var(--amber);}
+  .summary-card .n{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--amber);}
 
-  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;}
-  .card{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:20px 22px;margin-bottom:18px;}
-  .card-title{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;color:var(--chalk-dim);font-weight:600;margin-bottom:14px;}
-  .chart-wrap{height:220px;}
+  .exp-table{width:100%;border-collapse:collapse;}
+  .exp-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--chalk-dim);font-weight:600;padding:0 14px 10px;}
+  .exp-row{background:var(--ink-raised);}
+  .exp-row td{padding:14px;font-size:13.5px;border-top:1px solid var(--ink-line);}
+  .exp-row:first-child td{border-top:none;}
+  .cat-badge{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:999px;background:rgba(44,74,124,.18);color:var(--barber-blue);}
+  .exp-desc{color:var(--chalk-dim);font-size:12px;margin-top:2px;}
+  .exp-amount{font-family:'IBM Plex Mono',monospace;color:var(--barber-red);}
+  .exp-date{font-family:'IBM Plex Mono',monospace;color:var(--chalk-dim);font-size:12px;}
+  .exp-delete{cursor:pointer;color:var(--chalk-dim);font-size:14px;padding:7px;border-radius:6px;}
+  .exp-delete:hover{color:var(--barber-red);background:rgba(200,53,46,.12);}
+  .table-wrap{border-radius:var(--radius);overflow:hidden;}
+  .empty-row td{padding:30px;text-align:center;color:var(--chalk-dim);}
 
-  .rep-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--ink-line);font-size:13px;}
-  .rep-row:last-child{border-bottom:none;}
-  .rep-row .val{font-family:'IBM Plex Mono',monospace;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);align-items:center;justify-content:center;z-index:70;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:16px;padding:26px;width:380px;max-width:100%;}
+  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.5px;margin-bottom:18px;}
+  .modal label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--chalk-dim);display:block;margin-bottom:6px;}
+  .modal input, .modal select{width:100%;margin-bottom:14px;padding:10px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:13.5px;}
+  .modal-actions{display:flex;gap:8px;margin-top:6px;}
+  .modal-actions button{flex:1;padding:11px;border-radius:8px;cursor:pointer;font-size:13px;border:none;}
+  .btn-cancel{background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk-dim);}
+  .btn-confirm{background:var(--amber);color:var(--ink);font-weight:700;}
 
-  @media (max-width:900px){
+  @media (max-width:860px){
     .app{grid-template-columns:60px 1fr;}
     main{padding:22px 16px 50px;}
-    .grid2{grid-template-columns:1fr;}
+    .exp-table thead{display:none;}
+    .exp-table, .exp-table tbody, .exp-row, .exp-row td{display:block;width:100%;}
+    .exp-row{border-radius:12px;margin-bottom:10px;border:1px solid var(--ink-line);}
+    .exp-row td{border-top:none;}
   }
   :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
 </style>
@@ -80,8 +94,8 @@
       <a class="rail-item" href="staff.html" title="Staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.5c1.6.4 2.8 1.9 2.8 3.6 0 1.7-1.2 3.2-2.8 3.6"/><path d="M18.5 14.2c2.3.6 4 2.6 4 5"/></svg></a>
       <a class="rail-item" href="inventory.html" title="Inventory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg></a>
       <a class="rail-item" href="styles.html" title="Styles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3z"/><line x1="5" y1="8" x2="5" y2="20"/><line x1="8.5" y1="8" x2="8.5" y2="18"/><line x1="12" y1="8" x2="12" y2="20"/><line x1="15.5" y1="8" x2="15.5" y2="18"/><line x1="19" y1="8" x2="19" y2="20"/></svg></a>
-      <a class="rail-item active" href="reports.html" title="Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="21" y2="4"/></svg></a>
-      <a class="rail-item" href="expenses.html" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg></a>
+      <a class="rail-item" href="reports.html" title="Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="21" y2="4"/></svg></a>
+      <a class="rail-item active" href="expenses.html" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg></a>
       <a class="rail-item" href="settings.html" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
       <div class="rail-item logout-item" title="Logout" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
     </div>
@@ -91,146 +105,115 @@
   <main>
     <div class="topbar">
       <div>
-        <div class="shop-name">REPORTS</div>
-        <div class="shop-sub">Kinyozi Management System · performance overview</div>
+        <div class="shop-name">EXPENSES</div>
+        <div class="shop-sub">Kinyozi Management System · rent, supplies, salaries &amp; more</div>
       </div>
-    </div>
-
-    <div class="range-tabs" id="rangeTabs">
-      <div class="range-tab" data-days="7">Last 7 days</div>
-      <div class="range-tab active" data-days="30">Last 30 days</div>
-      <div class="range-tab" data-days="90">Last 90 days</div>
+      <button class="btn-add" onclick="openAddModal()">+ Add Expense</button>
     </div>
 
     <div class="summary-strip">
-      <div class="summary-card"><div class="l">Revenue</div><div class="n" id="sumRevenue">—</div></div>
-      <div class="summary-card"><div class="l">Expenses</div><div class="n" id="sumExpenses">—</div></div>
-      <div class="summary-card"><div class="l">Commissions</div><div class="n" id="sumCommissions">—</div></div>
-      <div class="summary-card profit"><div class="l">Profit</div><div class="n" id="sumProfit">—</div></div>
+      <div class="summary-card"><div class="l">Last 30 Days</div><div class="n" id="sumTotal">—</div></div>
+      <div class="summary-card"><div class="l">This Month</div><div class="n" id="sumMonth">—</div></div>
+      <div class="summary-card"><div class="l">Entries</div><div class="n" id="sumCount">—</div></div>
     </div>
 
-    <div class="grid2">
-      <div>
-        <div class="card">
-          <div class="card-title">Sales Over Time</div>
-          <div class="chart-wrap"><canvas id="salesChart"></canvas></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Popular Services</div>
-          <div id="servicesList"></div>
-        </div>
-      </div>
-      <div>
-        <div class="card">
-          <div class="card-title">Barber Commissions</div>
-          <div id="commissionsList"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Customer Growth</div>
-          <div id="growthList"></div>
-        </div>
-      </div>
+    <div class="table-wrap">
+      <table class="exp-table">
+        <thead><tr><th>Category</th><th>Amount</th><th>Date</th><th></th></tr></thead>
+        <tbody id="expBody"></tbody>
+      </table>
     </div>
   </main>
+</div>
+
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-title">Add Expense</div>
+    <label>Category</label>
+    <select id="expCategory">
+      <option value="rent">Rent</option>
+      <option value="utilities">Utilities</option>
+      <option value="salaries">Salaries</option>
+      <option value="supplies">Supplies</option>
+      <option value="other">Other</option>
+    </select>
+    <label>Description</label>
+    <input id="expDescription" placeholder="e.g. July electricity bill">
+    <label>Amount (KSh)</label>
+    <input id="expAmount" type="number" min="0" placeholder="e.g. 5000">
+    <label>Date</label>
+    <input id="expDate" type="date">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitExpense()">Add Expense</button>
+    </div>
+  </div>
 </div>
 
 <script>
   const SHOP_ID = '11111111-1111-1111-1111-111111111111';
   const API_BASE = window.location.origin + '/api';
-  let chartInstance = null;
-  let rangeDays = 30;
 
   function fmtKsh(n) { return 'KSh ' + Number(n).toLocaleString(); }
-  function dateStr(d) { return d.toISOString().slice(0, 10); }
+  function fmtDate(d) { return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
 
-  function currentRange() {
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - (rangeDays - 1));
-    return { from: dateStr(from), to: dateStr(to) };
+  function rowHTML(e) {
+    return `
+      <tr class="exp-row">
+        <td><span class="cat-badge">${e.category}</span><div class="exp-desc">${e.description || ''}</div></td>
+        <td class="exp-amount">${fmtKsh(e.amount)}</td>
+        <td class="exp-date">${fmtDate(e.incurred_at)}</td>
+        <td><span class="exp-delete" title="Delete" onclick="deleteExpense('${e.id}')">🗑</span></td>
+      </tr>`;
   }
 
-  async function loadReports() {
-    const { from, to } = currentRange();
-    const qs = `shop_id=${SHOP_ID}&from=${from}&to=${to}`;
+  async function loadExpenses() {
+    const res = await fetch(`${API_BASE}/expenses?shop_id=${SHOP_ID}`);
+    const expenses = await res.json();
 
-    const [salesRes, servicesRes, commRes, profitRes, growthRes] = await Promise.all([
-      fetch(`${API_BASE}/reports/sales?${qs}`),
-      fetch(`${API_BASE}/reports/services?${qs}`),
-      fetch(`${API_BASE}/reports/commissions?${qs}`),
-      fetch(`${API_BASE}/reports/profit?${qs}`),
-      fetch(`${API_BASE}/reports/customer-growth?${qs}`)
-    ]);
-    const sales = await salesRes.json();
-    const services = await servicesRes.json();
-    const commissions = await commRes.json();
-    const profit = await profitRes.json();
-    const growth = await growthRes.json();
+    document.getElementById('expBody').innerHTML = expenses.length
+      ? expenses.map(rowHTML).join('')
+      : `<tr class="empty-row"><td colspan="4">No expenses logged in the last 30 days.</td></tr>`;
 
-    document.getElementById('sumRevenue').textContent = fmtKsh(profit.revenue);
-    document.getElementById('sumExpenses').textContent = fmtKsh(profit.expenses);
-    document.getElementById('sumCommissions').textContent = fmtKsh(profit.commissions);
-    document.getElementById('sumProfit').textContent = fmtKsh(profit.profit);
+    const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    const monthTotal = expenses.filter(e => e.incurred_at.slice(0, 7) === thisMonth).reduce((sum, e) => sum + Number(e.amount), 0);
 
-    renderChart(sales.daily, from, to);
-
-    document.getElementById('servicesList').innerHTML = services.length
-      ? services.map(s => `<div class="rep-row"><span>${s.name} <span style="color:var(--chalk-dim);">×${s.times_sold}</span></span><span class="val">${fmtKsh(s.revenue)}</span></div>`).join('')
-      : `<div class="rep-row"><span style="color:var(--chalk-dim);">No services sold in this range.</span></div>`;
-
-    document.getElementById('commissionsList').innerHTML = commissions.length
-      ? commissions.map(c => `<div class="rep-row"><span>${c.full_name} <span style="color:var(--chalk-dim);">(${c.sale_count} sales)</span></span><span class="val">${fmtKsh(c.commission_total)}</span></div>`).join('')
-      : `<div class="rep-row"><span style="color:var(--chalk-dim);">No commissions in this range.</span></div>`;
-
-    document.getElementById('growthList').innerHTML = `
-      <div class="rep-row"><span>New customers</span><span class="val">${growth.new_customers}</span></div>
-      <div class="rep-row"><span>Returning customers</span><span class="val">${growth.returning_customers}</span></div>
-    `;
+    document.getElementById('sumTotal').textContent = fmtKsh(total);
+    document.getElementById('sumMonth').textContent = fmtKsh(monthTotal);
+    document.getElementById('sumCount').textContent = expenses.length;
   }
 
-  function renderChart(daily, from, to) {
-    const days = [];
-    let d = new Date(from);
-    const end = new Date(to);
-    while (d <= end) { days.push(dateStr(d)); d.setDate(d.getDate() + 1); }
+  function openAddModal() {
+    document.getElementById('expCategory').value = 'rent';
+    document.getElementById('expDescription').value = '';
+    document.getElementById('expAmount').value = '';
+    document.getElementById('expDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('addModal').classList.add('open');
+  }
+  function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
 
-    const byDay = Object.fromEntries((daily || []).map(r => [r.day.slice(0,10), Number(r.total)]));
-    const values = days.map(d => byDay[d] || 0);
-    const labels = days.map(d => new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short' }));
+  async function submitExpense() {
+    const category = document.getElementById('expCategory').value;
+    const description = document.getElementById('expDescription').value.trim();
+    const amount = Number(document.getElementById('expAmount').value);
+    const incurred_at = document.getElementById('expDate').value;
+    if (!amount || amount <= 0) return;
 
-    if (chartInstance) chartInstance.destroy();
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          data: values, borderColor: '#E8A33D', backgroundColor: 'rgba(232,163,61,.15)',
-          fill: true, tension: 0.3, pointRadius: 0
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: {
-          backgroundColor: '#1B1B1D', titleColor: '#F2ECDD', bodyColor: '#F2ECDD',
-          borderColor: '#3A3936', borderWidth: 1, callbacks: { label: (item) => fmtKsh(item.raw) }
-        }},
-        scales: {
-          x: { grid: { display: false }, ticks: { color: '#B8B3A6', font: { size: 10 }, maxTicksLimit: 8 } },
-          y: { grid: { color: '#3A3936' }, ticks: { color: '#B8B3A6', font: { size: 10 } } }
-        }
-      }
+    const createdBy = (window.barberOSSession && window.barberOSSession.id) || undefined;
+    await fetch(`${API_BASE}/expenses`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop_id: SHOP_ID, category, description, amount, incurred_at, created_by: createdBy })
     });
+    closeAddModal();
+    loadExpenses();
   }
 
-  document.querySelectorAll('.range-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.range-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      rangeDays = Number(tab.dataset.days);
-      loadReports();
-    });
-  });
+  async function deleteExpense(id) {
+    if (!confirm('Delete this expense record?')) return;
+    await fetch(`${API_BASE}/expenses/${id}`, { method: 'DELETE' });
+    loadExpenses();
+  }
 
   let toastTimer;
   function comingSoon(feature) {
@@ -241,7 +224,7 @@
     toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
   }
 
-  loadReports();
+  loadExpenses();
 </script>
 </body>
 </html>

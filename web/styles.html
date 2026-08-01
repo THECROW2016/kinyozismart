@@ -29,6 +29,7 @@
   .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
   .logout-item{margin-top:10px;color:var(--barber-red);}
   .logout-item:hover{background:rgba(200,53,46,.15);}
+  .rail-item svg{width:19px;height:19px;flex-shrink:0;}
   .rail-toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk);padding:12px 20px;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .2s ease, transform .2s ease;pointer-events:none;z-index:100;}
   .rail-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
@@ -102,17 +103,18 @@
   <nav class="rail" aria-label="Main navigation">
     <div class="rail-logo">BO</div>
     <div class="rail-nav">
-      <a class="rail-item" href="dashboard.html" title="Dashboard">▦</a>
-      <a class="rail-item" href="pos.html" title="POS / New Sale">✂</a>
-      <a class="rail-item" href="appointments.html" title="Appointments">📅</a>
-      <a class="rail-item" href="queue.html" title="Queue">☰</a>
-      <a class="rail-item" href="customers.html" title="Customers">👤</a>
-      <a class="rail-item" href="staff.html" title="Staff">👥</a>
-      <a class="rail-item" href="inventory.html" title="Inventory">📦</a>
-      <a class="rail-item active" href="styles.html" title="Styles">💇</a>
-      <a class="rail-item" href="reports.html" title="Reports">📈</a>
-      <a class="rail-item" href="settings.html" title="Settings">⚙</a>
-      <div class="rail-item logout-item" title="Logout" onclick="doLogout()">⏻</div>
+      <a class="rail-item" href="dashboard.html" title="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></a>
+      <a class="rail-item" href="pos.html" title="POS / New Sale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></a>
+      <a class="rail-item" href="appointments.html" title="Appointments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></a>
+      <a class="rail-item" href="queue.html" title="Queue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="12" x2="21" y2="12"/><circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="18" x2="21" y2="18"/></svg></a>
+      <a class="rail-item" href="customers.html" title="Customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></a>
+      <a class="rail-item" href="staff.html" title="Staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.5c1.6.4 2.8 1.9 2.8 3.6 0 1.7-1.2 3.2-2.8 3.6"/><path d="M18.5 14.2c2.3.6 4 2.6 4 5"/></svg></a>
+      <a class="rail-item" href="inventory.html" title="Inventory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg></a>
+      <a class="rail-item active" href="styles.html" title="Styles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3z"/><line x1="5" y1="8" x2="5" y2="20"/><line x1="8.5" y1="8" x2="8.5" y2="18"/><line x1="12" y1="8" x2="12" y2="20"/><line x1="15.5" y1="8" x2="15.5" y2="18"/><line x1="19" y1="8" x2="19" y2="20"/></svg></a>
+      <a class="rail-item" href="reports.html" title="Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="21" y2="4"/></svg></a>
+      <a class="rail-item" href="expenses.html" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg></a>
+      <a class="rail-item" href="settings.html" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+      <div class="rail-item logout-item" title="Logout" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
     </div>
   </nav>
   <div class="rail-toast" id="railToast"></div>

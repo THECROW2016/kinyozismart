@@ -20,6 +20,16 @@
     min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
     -webkit-font-smoothing:antialiased;padding:24px;
   }
+  body.manager-bg{
+    background:
+      linear-gradient(180deg, rgba(27,27,29,.6) 0%, rgba(27,27,29,.8) 60%, rgba(27,27,29,.95) 100%),
+      url('assets/manager-login-bg.jpg') center 30% / cover no-repeat fixed;
+  }
+  body.manager-bg .panel{
+    background:rgba(27,27,29,.55);border:1px solid rgba(242,236,221,.12);border-radius:20px;
+    padding:32px 28px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
   .pole-strip{
     position:fixed;top:0;left:0;right:0;height:8px;
     background:repeating-linear-gradient(-45deg, var(--barber-red) 0 18px, var(--chalk) 18px 36px, var(--barber-blue) 36px 54px, var(--chalk) 54px 72px);
@@ -97,6 +107,9 @@
   const API_BASE = window.location.origin + '/api';
   const params = new URLSearchParams(window.location.search);
   const group = params.get('group') || 'manager';
+  if (group === 'manager') {
+    document.body.classList.add('manager-bg');
+  }
   let selectedUser = null;
   let pin = '';
 

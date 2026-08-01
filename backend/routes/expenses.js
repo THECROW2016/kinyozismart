@@ -42,4 +42,17 @@ router.post('/', async (req, res) => {
   }
 });
 
+// DELETE /api/expenses/:id
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query(`DELETE FROM expenses WHERE id = $1 RETURNING id`, [id]);
+    if (!rows.length) return res.status(404).json({ error: 'Expense not found' });
+    res.json({ deleted: true, id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete expense', detail: err.message });
+  }
+});
+
 module.exports = router;
