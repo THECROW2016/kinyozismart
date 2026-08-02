@@ -92,6 +92,15 @@
 
   .error-msg{color:var(--barber-red);font-size:12.5px;height:18px;margin-bottom:14px;}
   .loading-msg{color:var(--chalk-dim);font-size:12.5px;margin-top:20px;}
+
+  @media (max-width:480px){
+    body.manager-bg .panel{padding:24px 18px;}
+    .group-title{font-size:22px;}
+    .staff-grid{grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:10px;}
+    .staff-tile{padding:12px 6px;}
+    .keypad{max-width:100%;gap:9px;}
+    .key{padding:15px 0;font-size:18px;}
+  }
 </style>
 </head>
 <body>
@@ -102,6 +111,7 @@
   <div class="loading-msg">Loading staff…</div>
 </div>
 
+<script src="utils.js"></script>
 <script>
   const SHOP_ID = '11111111-1111-1111-1111-111111111111';
   const API_BASE = window.location.origin + '/api';
@@ -130,8 +140,8 @@
         ${staff.map(s => `
           <div class="staff-tile" onclick='selectUser(${JSON.stringify(s)})'>
             <div class="staff-avatar">${initials(s.full_name)}</div>
-            <div class="staff-tile-name">${s.full_name.split(' ')[0]}</div>
-            <div class="staff-tile-role">${s.role}</div>
+            <div class="staff-tile-name">${escapeHtml(s.full_name.split(' ')[0])}</div>
+            <div class="staff-tile-role">${escapeHtml(s.role)}</div>
           </div>`).join('')}
       </div>
       ${staff.length === 0 ? '<div class="loading-msg">No accounts found for this group.</div>' : ''}
@@ -150,8 +160,8 @@
       <div class="selected-user">
         <div class="selected-avatar">${initials(selectedUser.full_name)}</div>
         <div>
-          <div class="selected-name">${selectedUser.full_name}</div>
-          <div class="selected-role">${selectedUser.role}</div>
+          <div class="selected-name">${escapeHtml(selectedUser.full_name)}</div>
+          <div class="selected-role">${escapeHtml(selectedUser.role)}</div>
         </div>
         <span class="change-user" onclick="loadStaff()">Change</span>
       </div>
@@ -204,6 +214,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
 
+      data.loggedInAt = Date.now();
       localStorage.setItem('barberos_session', JSON.stringify(data));
       const destination = (data.role === 'owner' || data.role === 'manager') ? 'dashboard.html' : 'queue.html';
       window.location.href = destination;

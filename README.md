@@ -80,10 +80,22 @@ This is enforced client-side in `auth-guard.js` (hides the Settings nav link + r
 
 A dedicated Expenses page tracks rent, utilities, salaries, supplies, and other costs (category, description, amount, date), feeding into the profit report (`revenue − expenses − commissions`). Both Admin and Manager can add and delete expense entries.
 
+### Security
+
+- **XSS protection**: every place user-entered text (customer names, appointment notes, staff names, product/service names, expense descriptions, etc.) gets rendered back into the page is now HTML-escaped (`web/utils.js`). Previously this was inserted via `innerHTML` unescaped in several places — a customer typing a name like `<img src=x onerror=...>` at the walk-in queue could have run arbitrary JS for anyone viewing that page.
+- **Login rate limiting**: the login endpoint is capped at 20 requests per 15 minutes per IP, and additionally locks a specific account for 15 minutes after 5 wrong PIN attempts on it — a 4-digit PIN is only 10,000 combinations, so this matters.
+- **General API rate limiting**: 600 requests / 15 min per IP across the API, to blunt scraping/abuse.
+- **Session expiry**: a browser session now expires after 12 hours and forces a fresh login, instead of lasting forever.
+- **Security headers** via `helmet` (CSP, X-Frame-Options, X-Content-Type-Options, etc.), scoped to what this app actually loads — note the CSP explicitly allows inline scripts/styles/`onclick` handlers (`'unsafe-inline'`) since the app relies on them throughout; a stricter nonce-based CSP would be a further improvement but requires reworking every inline handler.
+
+None of this replaces the fact that PIN-based auth with no server-side session/JWT is inherently lighter-weight than a real production auth system — treat it as appropriate for internal shop staff use, not for anything handling sensitive data at scale.
+
 ### Look & feel
 
 - Sidebar icons are hand-drawn inline SVGs (no emoji) for a consistent, sleek look across every page.
 - The Manager Login screen (`login.html?group=manager`) uses a barbershop-themed photo as a background wallpaper; Admin Login stays on the plain dark theme.
+- Responsive breakpoints tuned for both small phones (≤480px: smaller sidebar, reduced padding/font sizes) and tablet/narrow-window sizes (≤860–960px depending on page: sidebar collapses to icon-only, multi-column layouts stack).
+- The Style Gallery feature has been removed.
 
 This is client-side gating, matching the PIN system's overall security level — not a substitute for real server-side authorization if this goes into production with real money.
 

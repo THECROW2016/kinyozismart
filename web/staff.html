@@ -95,9 +95,20 @@
     main{padding:22px 16px 50px;}
   }
   :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+  @media (max-width:480px){
+    .app{grid-template-columns:50px 1fr;}
+    .rail-logo{width:32px;height:32px;font-size:12px;margin-bottom:12px;}
+    .rail-item{width:36px;height:36px;}
+    .rail-item svg{width:16px;height:16px;}
+    main{padding:16px 12px 40px;}
+    .shop-name{font-size:22px !important;}
+    .shop-sub{font-size:11px;}
+  }
 </style>
 </head>
 <body>
+<script src="utils.js"></script>
 <script src="auth-guard.js"></script>
 <div class="app">
   <nav class="rail" aria-label="Main navigation">
@@ -110,7 +121,6 @@
       <a class="rail-item" href="customers.html" title="Customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></a>
       <a class="rail-item active" href="staff.html" title="Staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.5c1.6.4 2.8 1.9 2.8 3.6 0 1.7-1.2 3.2-2.8 3.6"/><path d="M18.5 14.2c2.3.6 4 2.6 4 5"/></svg></a>
       <a class="rail-item" href="inventory.html" title="Inventory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg></a>
-      <a class="rail-item" href="styles.html" title="Styles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3z"/><line x1="5" y1="8" x2="5" y2="20"/><line x1="8.5" y1="8" x2="8.5" y2="18"/><line x1="12" y1="8" x2="12" y2="20"/><line x1="15.5" y1="8" x2="15.5" y2="18"/><line x1="19" y1="8" x2="19" y2="20"/></svg></a>
       <a class="rail-item" href="reports.html" title="Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="21" y2="4"/></svg></a>
       <a class="rail-item" href="expenses.html" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg></a>
       <a class="rail-item" href="settings.html" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
@@ -177,13 +187,14 @@
   function initials(name) { return name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(); }
   function avatarHTML(person) {
     return person.photo_url
-      ? `<img src="${person.photo_url}" alt="${person.full_name}">`
+      ? `<img src="${escapeHtml(person.photo_url)}" alt="${escapeHtml(person.full_name)}">`
       : initials(person.full_name);
   }
 
   function staffCardHTML(b) {
     const isBarber = b.role === 'barber';
-    const deleteBtn = `<span class="staff-delete" title="Remove ${b.full_name}" onclick="deleteStaff('${b.id}','${b.full_name.replace(/'/g,"\\'")}')">🗑</span>`;
+    const safeName = b.full_name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const deleteBtn = `<span class="staff-delete" title="Remove ${escapeHtml(b.full_name)}" onclick="deleteStaff('${b.id}','${safeName}')">🗑</span>`;
 
     if (!isBarber) {
       // Simplified card for receptionists/managers — no commission/attendance data yet
@@ -192,9 +203,9 @@
           <div class="staff-top">
             <div class="staff-avatar">${avatarHTML(b)}</div>
             <div style="flex:1;">
-              <div class="staff-name">${b.full_name}</div>
-              <div class="staff-spec">${b.phone || ''}</div>
-              <span class="role-badge">${b.role}</span>
+              <div class="staff-name">${escapeHtml(b.full_name)}</div>
+              <div class="staff-spec">${escapeHtml(b.phone || '')}</div>
+              <span class="role-badge">${escapeHtml(b.role)}</span>
             </div>
             ${deleteBtn}
           </div>
@@ -214,8 +225,8 @@
         <div class="staff-top">
           <div class="staff-avatar">${avatarHTML(b)}</div>
           <div style="flex:1;">
-            <div class="staff-name">${b.full_name}</div>
-            <div class="staff-spec">${(b.specialties || []).join(', ') || 'General'}</div>
+            <div class="staff-name">${escapeHtml(b.full_name)}</div>
+            <div class="staff-spec">${escapeHtml((b.specialties || []).join(', ') || 'General')}</div>
           </div>
           ${deleteBtn}
         </div>

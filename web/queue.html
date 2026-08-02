@@ -115,9 +115,20 @@
     .columns{grid-template-columns:1fr;}
   }
   :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+  @media (max-width:480px){
+    .app{grid-template-columns:50px 1fr;}
+    .rail-logo{width:32px;height:32px;font-size:12px;margin-bottom:12px;}
+    .rail-item{width:36px;height:36px;}
+    .rail-item svg{width:16px;height:16px;}
+    main{padding:16px 12px 40px;}
+    .shop-name{font-size:22px !important;}
+    .shop-sub{font-size:11px;}
+  }
 </style>
 </head>
 <body>
+<script src="utils.js"></script>
 <script src="auth-guard.js"></script>
 <div class="app">
   <nav class="rail" aria-label="Main navigation">
@@ -130,7 +141,6 @@
       <a class="rail-item" href="customers.html" title="Customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></a>
       <a class="rail-item" href="staff.html" title="Staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.5c1.6.4 2.8 1.9 2.8 3.6 0 1.7-1.2 3.2-2.8 3.6"/><path d="M18.5 14.2c2.3.6 4 2.6 4 5"/></svg></a>
       <a class="rail-item" href="inventory.html" title="Inventory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg></a>
-      <a class="rail-item" href="styles.html" title="Styles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3z"/><line x1="5" y1="8" x2="5" y2="20"/><line x1="8.5" y1="8" x2="8.5" y2="18"/><line x1="12" y1="8" x2="12" y2="20"/><line x1="15.5" y1="8" x2="15.5" y2="18"/><line x1="19" y1="8" x2="19" y2="20"/></svg></a>
       <a class="rail-item" href="reports.html" title="Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="21" y2="4"/></svg></a>
       <a class="rail-item" href="expenses.html" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg></a>
       <a class="rail-item" href="settings.html" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
@@ -222,11 +232,11 @@
       <div class="ticket ${cls}">
         <div class="ticket-top">
           <div class="ticket-num">${e.queue_number}</div>
-          <div class="ticket-name">${e.customer_name}</div>
+          <div class="ticket-name">${escapeHtml(e.customer_name)}</div>
           <div class="ticket-wait">${timeSince(e.joined_at)}</div>
         </div>
-        <div class="ticket-service">${services}</div>
-        <div class="ticket-barber"><span class="barber-dot" style="background:${e.barber_name ? 'var(--barber-blue)' : 'var(--chalk-dim)'};"></span>${e.barber_name || 'No preference'}</div>
+        <div class="ticket-service">${escapeHtml(services)}</div>
+        <div class="ticket-barber"><span class="barber-dot" style="background:${e.barber_name ? 'var(--barber-blue)' : 'var(--chalk-dim)'};"></span>${escapeHtml(e.barber_name || 'No preference')}</div>
         <div class="ticket-actions">${actionsHTML}</div>
       </div>`;
   }

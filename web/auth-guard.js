@@ -3,9 +3,17 @@
   const currentPage = path.split('/').pop() || 'index.html';
   const isLoginPage = currentPage === 'login.html';
   const isLanding = currentPage === 'index.html' || path === '/';
+  const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000; // 12 hours
 
   let session = null;
   try { session = JSON.parse(localStorage.getItem('barberos_session') || 'null'); } catch (e) { session = null; }
+
+  // Expire stale sessions — older accounts predate this field, so missing
+  // loggedInAt is treated as expired too (forces a fresh login once).
+  if (session && (!session.loggedInAt || Date.now() - session.loggedInAt > SESSION_MAX_AGE_MS)) {
+    localStorage.removeItem('barberos_session');
+    session = null;
+  }
 
   if (!session && !isLoginPage && !isLanding) {
     window.location.href = 'login.html';
