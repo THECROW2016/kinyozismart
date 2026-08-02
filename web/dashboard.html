@@ -395,8 +395,8 @@
       </div>
       <div class="topbar-right">
         <span class="status-pill" id="roleViewPill" style="display:none;"></span>
-        <span class="status-pill"><span class="status-dot"></span>OPEN</span>
-        <span class="date-txt">Thu, 30 Jul 2026 · 3:42 PM</span>
+        <span class="status-pill"><span class="status-dot"></span><span id="openStatusText">OPEN</span></span>
+        <span class="date-txt" id="dateTimeLabel"></span>
       </div>
     </div>
 
@@ -631,6 +631,34 @@
       }
     });
   }
+
+  function updateDateTime() {
+    const now = new Date();
+    const text = now.toLocaleString('en-GB', {
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    }).replace(',', ' ·');
+    document.getElementById('dateTimeLabel').textContent = text;
+  }
+  updateDateTime();
+  setInterval(updateDateTime, 30000);
+
+  async function updateOpenStatus() {
+    try {
+      const res = await fetch(`${API_BASE}/settings/shop?shop_id=${SHOP_ID}`);
+      const shop = await res.json();
+      const now = new Date();
+      const [openH, openM] = (shop.opening_time || '08:00').split(':').map(Number);
+      const [closeH, closeM] = (shop.closing_time || '20:00').split(':').map(Number);
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const isOpen = nowMins >= (openH * 60 + openM) && nowMins < (closeH * 60 + closeM);
+      document.getElementById('openStatusText').textContent = isOpen ? 'OPEN' : 'CLOSED';
+    } catch (err) {
+      console.error('Failed to load shop hours', err);
+    }
+  }
+  updateOpenStatus();
+  setInterval(updateOpenStatus, 60000);
 
   loadDashboard();
   loadQueuePreview();
