@@ -150,12 +150,18 @@
   .btn-done{background:#eee;color:#444;}
 
   @media print{
-    body *{visibility:hidden;}
-    #receiptPrintArea, #receiptPrintArea *{visibility:visible;}
-    #receiptPrintArea{position:fixed;top:0;left:0;width:100%;}
-    .receipt-actions{display:none;}
-    .receipt-overlay{background:none;position:static;}
-    .receipt-card{box-shadow:none;width:100%;max-height:none;}
+    body > .app{display:none !important;}
+    .receipt-actions{display:none !important;}
+    .receipt-overlay{
+      display:block !important;position:static !important;background:none !important;
+      inset:auto;padding:0;
+    }
+    .receipt-overlay > div{display:block !important;}
+    .receipt-card{
+      box-shadow:none;width:320px;max-width:100%;max-height:none;overflow:visible;
+      margin:0 auto;border-radius:0;
+    }
+    @page{margin:12mm;}
   }
 
   @media (max-width:480px){
