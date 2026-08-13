@@ -1,0 +1,156 @@
+:root{
+  /* Base sizing — use rems throughout app for predictable scaling */
+  font-size: 16px;
+  --nav-bg: #ffffff;
+  --border-muted: rgba(0,0,0,0.08);
+  --focus:  rgba(21,156,228,0.35);
+}
+
+/* Prevent font auto-resize on iOS, allow safe-area padding at bottom */
+html,body{
+  -webkit-text-size-adjust:100%;
+  -moz-text-size-adjust:100%;
+  -ms-text-size-adjust:100%;
+  text-size-adjust:100%;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
+}
+
+/* Layout container */
+.container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+/* Images & media */
+img, picture, video, svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Buttons & tappable controls: meet 44x44pt guideline */
+.btn, .button, a.button, .nav-item, button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  box-sizing: border-box;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Primary buttons */
+.btn-primary, .button-primary {
+  background-color: var(--primary, #0b74de);
+  color: #fff;
+  border: none;
+  border-radius: .375rem;
+  font-size: 1rem;
+  padding: 0.625rem 1rem;
+}
+
+/* Make primary buttons full width on small screens */
+@media (max-width: 480px) {
+  .btn-primary, .button-primary {
+    width: 100%;
+    display: block;
+  }
+}
+
+/* Larger tap targets for list items */
+.list-item, .menu-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #eee;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+/* Focus states for keyboard / a11y */
+:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Bottom sticky navigation (mobile) */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--nav-bg);
+  border-top: 1px solid var(--border-muted);
+  padding: calc(0.5rem + env(safe-area-inset-bottom)) 0.5rem 0.5rem;
+  z-index: 1000;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* nav items inside bottom nav */
+.bottom-nav .nav-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.25rem 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.85rem;
+}
+
+/* hide bottom nav on wider screens */
+@media (min-width: 769px) {
+  .bottom-nav { display: none; }
+}
+
+/* Responsive typography */
+body {
+  font-size: 1rem;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Forms */
+input[type="text"], input[type="email"], input[type="tel"], textarea, select {
+  font-size: 1rem;
+  padding: 0.75rem;
+  min-height: 44px;
+  border-radius: .375rem;
+  border: 1px solid #dcdcdc;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Ensure clickable icons have adequate hit area */
+.icon-button {
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Utility: prevent horizontal overflow */
+.responsive-wrapper {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Small-screen tweaks */
+@media (max-width: 480px) {
+  .container { padding: 0 0.75rem; }
+  .header .logo { max-width: 160px; }
+  .card { margin: 0.5rem 0; }
+}
