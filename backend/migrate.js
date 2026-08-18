@@ -80,6 +80,21 @@ async function run() {
       );
       console.log('[migrate] created demo Manager account (PIN 1212).');
     }
+
+    // Ensure login_sessions exists even on databases migrated before this
+    // login/logout audit trail was added
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS login_sessions (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        shop_id     UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+        login_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        logout_at   TIMESTAMPTZ
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_login_sessions_shop_login ON login_sessions(shop_id, login_at DESC)
+    `);
   } finally {
     client.release();
     await pool.end();

@@ -4,6 +4,16 @@
   const isLoginPage = currentPage === 'login.html';
   const isLanding = currentPage === 'index.html' || path === '/';
   const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000; // 12 hours
+  const API_BASE = window.location.origin + '/api';
+
+  function recordLogout(sessionId) {
+    if (!sessionId) return;
+    // Fire-and-forget with keepalive so it survives the page navigating away
+    fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId }), keepalive: true
+    }).catch(() => {});
+  }
 
   let session = null;
   try { session = JSON.parse(localStorage.getItem('barberos_session') || 'null'); } catch (e) { session = null; }
@@ -11,6 +21,7 @@
   // Expire stale sessions — older accounts predate this field, so missing
   // loggedInAt is treated as expired too (forces a fresh login once).
   if (session && (!session.loggedInAt || Date.now() - session.loggedInAt > SESSION_MAX_AGE_MS)) {
+    recordLogout(session.session_id);
     localStorage.removeItem('barberos_session');
     session = null;
   }
@@ -23,6 +34,7 @@
   window.barberOSSession = session;
 
   window.doLogout = function () {
+    recordLogout(session && session.session_id);
     localStorage.removeItem('barberos_session');
     window.location.href = 'login.html';
   };

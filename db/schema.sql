@@ -85,6 +85,19 @@ CREATE TABLE attendance (
 );
 
 -- ------------------------------------------------------------
+-- Login sessions: audit trail of when Admin/Manager accounts
+-- logged in and out of the app (separate from barber clock-in/out,
+-- which is about shift attendance for commission purposes)
+-- ------------------------------------------------------------
+CREATE TABLE login_sessions (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  shop_id     UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  login_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  logout_at   TIMESTAMPTZ
+);
+
+-- ------------------------------------------------------------
 -- Customers
 -- ------------------------------------------------------------
 CREATE TABLE customers (
@@ -296,6 +309,7 @@ CREATE INDEX idx_appointments_shop_scheduled ON appointments(shop_id, scheduled_
 CREATE INDEX idx_customers_shop_phone ON customers(shop_id, phone);
 CREATE INDEX idx_products_shop_stock ON products(shop_id, stock_quantity);
 CREATE INDEX idx_commissions_barber_paid ON commissions(barber_id, is_paid_out);
+CREATE INDEX idx_login_sessions_shop_login ON login_sessions(shop_id, login_at DESC);
 
 -- ------------------------------------------------------------
 -- Example: daily queue number reset (application-level logic)

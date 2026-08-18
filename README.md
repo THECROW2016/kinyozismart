@@ -76,6 +76,10 @@ Barbers and receptionists are still real records (needed for POS attribution, co
 
 This is enforced client-side in `auth-guard.js` (hides the Settings nav link + redirects on direct navigation for the Admin-only page) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
 
+### Login history
+
+Every Admin/Manager login and logout is recorded (`login_sessions` table) with a timestamp for each. The Staff page shows a "Login History" panel — who logged in, their role, when, and when they logged out (or "still logged in" if the session is active). This is separate from barber shift clock-in/out (which is about attendance for commission purposes, not app access).
+
 ### Expenses
 
 A dedicated Expenses page tracks rent, utilities, salaries, supplies, and other costs (category, description, amount, date), feeding into the profit report (`revenue − expenses − commissions`). Both Admin and Manager can add and delete expense entries.

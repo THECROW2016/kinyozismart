@@ -47,7 +47,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const { rows } = await pool.query(
-      `SELECT id, full_name, role, pin_hash FROM users WHERE id = $1 AND is_active = true`,
+      `SELECT id, shop_id, full_name, role, pin_hash FROM users WHERE id = $1 AND is_active = true`,
       [user_id]
     );
     if (!rows.length) return res.status(404).json({ error: 'User not found' });
@@ -65,10 +65,60 @@ router.post('/login', async (req, res) => {
     }
 
     failedAttempts.delete(user_id);
-    res.json({ id: user.id, full_name: user.full_name, role: user.role });
+
+    const session = await pool.query(
+      `INSERT INTO login_sessions (user_id, shop_id) VALUES ($1, $2) RETURNING id, login_at`,
+      [user.id, user.shop_id]
+    );
+
+    res.json({
+      id: user.id,
+      full_name: user.full_name,
+      role: user.role,
+      session_id: session.rows[0].id
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login failed', detail: err.message });
+  }
+});
+
+// POST /api/auth/logout  body: { session_id }
+router.post('/logout', async (req, res) => {
+  const { session_id } = req.body;
+  if (!session_id) return res.status(400).json({ error: 'session_id is required' });
+  try {
+    const { rows } = await pool.query(
+      `UPDATE login_sessions SET logout_at = now() WHERE id = $1 AND logout_at IS NULL RETURNING id`,
+      [session_id]
+    );
+    res.json({ loggedOut: rows.length > 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Logout failed', detail: err.message });
+  }
+});
+
+// GET /api/auth/sessions?shop_id=...&limit=25 — login/logout audit trail
+router.get('/sessions', async (req, res) => {
+  const { shop_id } = req.query;
+  const limit = Math.min(Number(req.query.limit) || 25, 100);
+  if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT ls.id, ls.login_at, ls.logout_at, u.full_name, u.role
+       FROM login_sessions ls
+       JOIN users u ON u.id = ls.user_id
+       WHERE ls.shop_id = $1
+       ORDER BY ls.login_at DESC
+       LIMIT $2`,
+      [shop_id, limit]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load login history', detail: err.message });
   }
 });
 
