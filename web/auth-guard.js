@@ -18,6 +18,14 @@
   let session = null;
   try { session = JSON.parse(localStorage.getItem('barberos_session') || 'null'); } catch (e) { session = null; }
 
+  // The app has exactly two account types. Any other role (e.g. a barber
+  // record that should never have had a login path) is rejected outright.
+  if (session && !['owner', 'manager'].includes(session.role)) {
+    recordLogout(session.session_id);
+    localStorage.removeItem('barberos_session');
+    session = null;
+  }
+
   // Expire stale sessions — older accounts predate this field, so missing
   // loggedInAt is treated as expired too (forces a fresh login once).
   if (session && (!session.loggedInAt || Date.now() - session.loggedInAt > SESSION_MAX_AGE_MS)) {

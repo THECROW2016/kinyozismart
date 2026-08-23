@@ -45,9 +45,13 @@ async function run() {
       console.log('[migrate] seed data applied.');
     }
 
-    // Ensure pin_hash exists even on databases migrated before PIN login was added
+    // Ensure pin_hash exists even on databases migrated before PIN login was added.
+    // Only owner/manager accounts log in — barbers/receptionists are intentionally
+    // created without a PIN, so they must never be swept up here.
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_hash TEXT`);
-    const { rows: needPin } = await client.query(`SELECT id FROM users WHERE pin_hash IS NULL`);
+    const { rows: needPin } = await client.query(
+      `SELECT id FROM users WHERE pin_hash IS NULL AND role IN ('owner', 'manager')`
+    );
     if (needPin.length) {
       console.log(`[migrate] assigning demo PINs to ${needPin.length} user(s)...`);
       for (const u of needPin) {
@@ -79,6 +83,16 @@ async function run() {
         [MANAGER_ID, hashPin('1212')]
       );
       console.log('[migrate] created demo Manager account (PIN 1212).');
+    }
+
+    // Corrective cleanup: an earlier version of this script assigned login PINs
+    // to barber/receptionist accounts too, which unintentionally gave them a
+    // login path with broader UI access than intended. They should never have one.
+    const cleared = await client.query(
+      `UPDATE users SET pin_hash = NULL WHERE role IN ('barber', 'receptionist') AND pin_hash IS NOT NULL RETURNING id`
+    );
+    if (cleared.rows.length) {
+      console.log(`[migrate] cleared incorrectly-assigned PINs from ${cleared.rows.length} barber/receptionist account(s).`);
     }
 
     // Ensure login_sessions exists even on databases migrated before this

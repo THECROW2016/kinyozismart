@@ -53,6 +53,12 @@ router.post('/login', async (req, res) => {
     if (!rows.length) return res.status(404).json({ error: 'User not found' });
 
     const user = rows[0];
+    // Only owner/manager accounts are allowed to log in at all — barbers and
+    // receptionists are operational records, not app users, even if a PIN
+    // somehow ended up set on one.
+    if (!['owner', 'manager'].includes(user.role)) {
+      return res.status(403).json({ error: 'This account cannot log in to the app' });
+    }
     if (!verifyPin(pin, user.pin_hash)) {
       const current = failedAttempts.get(user_id) || { count: 0 };
       current.count += 1;
