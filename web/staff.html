@@ -197,7 +197,7 @@
       <div class="reg-field"><label>Commission rate (%)</label><input id="regCommission" type="number" value="40"></div>
     </div>
     <div class="reg-field" id="pinField"><label>4-digit login PIN</label><input id="regPin" maxlength="4" inputmode="numeric" placeholder="e.g. 6789"></div>
-    <div class="reg-field" id="pinNote" style="display:none;color:var(--chalk-dim);font-size:11.5px;margin-top:-8px;">Barbers and receptionists don't log into the app individually — no PIN needed.</div>
+    <div class="reg-field" id="pinNote" style="display:none;color:var(--chalk-dim);font-size:11.5px;margin-top:-8px;">Receptionists don't log into the app individually — no PIN needed.</div>
 
     <div class="reg-actions">
       <button class="btn-cancel" onclick="closeRegModal()">Cancel</button>
@@ -313,10 +313,10 @@
   function toggleBarberFields() {
     const role = document.getElementById('regRole').value;
     const isBarber = role === 'barber';
-    const isManager = role === 'manager';
+    const needsPin = role === 'manager' || isBarber;
     document.getElementById('barberFields').style.display = isBarber ? 'block' : 'none';
-    document.getElementById('pinField').style.display = isManager ? 'block' : 'none';
-    document.getElementById('pinNote').style.display = isManager ? 'none' : 'block';
+    document.getElementById('pinField').style.display = needsPin ? 'block' : 'none';
+    document.getElementById('pinNote').style.display = needsPin ? 'none' : 'block';
   }
 
   function handlePhotoSelect(e) {
@@ -342,10 +342,11 @@
     const errorEl = document.getElementById('regError');
 
     if (!full_name || !phone) { errorEl.textContent = 'Name and phone are required.'; return; }
-    if (role === 'manager' && !/^\d{4}$/.test(pin)) { errorEl.textContent = 'PIN must be exactly 4 digits.'; return; }
+    const needsPin = role === 'manager' || role === 'barber';
+    if (needsPin && !/^\d{4}$/.test(pin)) { errorEl.textContent = 'PIN must be exactly 4 digits.'; return; }
 
     const body = { shop_id: SHOP_ID, full_name, phone, role, photo_url: selectedPhotoData };
-    if (role === 'manager') body.pin = pin;
+    if (needsPin) body.pin = pin;
     if (role === 'barber') {
       const specialties = document.getElementById('regSpecialties').value.split(',').map(s => s.trim()).filter(Boolean);
       body.specialties = specialties;
@@ -399,8 +400,8 @@
     }
   }
 
-  // Both admin (owner) and manager can add staff — manager can add, not delete
-  if (window.barberOSSession && ['owner', 'manager'].includes(window.barberOSSession.role)) {
+  // Owner, manager, and barber can all add staff (same access level for manager/barber)
+  if (window.barberOSSession && ['owner', 'manager', 'barber'].includes(window.barberOSSession.role)) {
     document.getElementById('addStaffBtn').style.display = 'inline-block';
   }
 

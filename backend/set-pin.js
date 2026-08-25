@@ -6,9 +6,10 @@
 // Against Railway's Postgres, from your machine (needs the Railway CLI,
 // already linked to this project):  railway run node backend/set-pin.js
 //
-// Only owner/manager accounts can have a login PIN — this script refuses to
-// touch any other role. The plaintext PINs below are never written to the
-// database; only their scrypt hash is (see utils/pin.js).
+// Only owner/manager/barber accounts can have a login PIN — this script
+// refuses to touch any other role (e.g. receptionist). The plaintext PINs
+// below are never written to the database; only their scrypt hash is (see
+// utils/pin.js).
 
 require('dotenv').config();
 const { Pool } = require('pg');
@@ -38,12 +39,12 @@ async function run() {
     }
     const { rows } = await pool.query(
       `UPDATE users SET pin_hash = $1
-       WHERE full_name = $2 AND role IN ('owner', 'manager')
+       WHERE full_name = $2 AND role IN ('owner', 'manager', 'barber')
        RETURNING id, full_name, role`,
       [hashPin(pin), full_name]
     );
     if (!rows.length) {
-      console.warn(`No owner/manager account named "${full_name}" found — skipped.`);
+      console.warn(`No owner/manager/barber account named "${full_name}" found — skipped.`);
     } else {
       for (const r of rows) console.log(`PIN updated for ${r.full_name} (${r.role}).`);
     }

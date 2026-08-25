@@ -134,7 +134,7 @@
   function renderPicker(staff) {
     const panel = document.getElementById('panel');
     panel.innerHTML = `
-      <div class="group-title">${group === 'admin' ? 'ADMIN LOGIN' : 'MANAGER LOGIN'}</div>
+      <div class="group-title">${group === 'admin' ? 'ADMIN LOGIN' : group === 'barber' ? 'BARBER LOGIN' : 'MANAGER LOGIN'}</div>
       <div class="group-sub">Tap your name to continue</div>
       <div class="staff-grid">
         ${staff.map(s => `
@@ -216,8 +216,7 @@
 
       data.loggedInAt = Date.now();
       localStorage.setItem('barberos_session', JSON.stringify(data));
-      const destination = (data.role === 'owner' || data.role === 'manager') ? 'dashboard.html' : 'queue.html';
-      window.location.href = destination;
+      window.location.href = 'dashboard.html';
     } catch (err) {
       errorMsg.textContent = err.message;
       const dotsEl = document.getElementById('pinDots');

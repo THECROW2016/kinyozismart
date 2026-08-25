@@ -58,18 +58,18 @@ PGHOST=localhost PGUSER=postgres PGPASSWORD=yourpassword PGDATABASE=barberos npm
 
 ### Login (PIN-based)
 
-The app now opens on a landing page (`index.html`) with two entry points — **Admin Login** and **Staff Login** — each leading to a PIN pad (`login.html`). Pick your name, enter a 4-digit PIN.
+The app opens on a landing page (`index.html`) with three entry points — **Admin Login**, **Manager Login**, and **Barber Login** — each leading to a PIN pad (`login.html?group=admin|manager|barber`). Pick your name, enter a 4-digit PIN.
 
-Initial PINs for the two seeded accounts (Shop Owner, Store Manager) are set in `backend/migrate.js` (`INITIAL_PINS`) — read them there rather than here, so this doc can't go stale again like it just did. To change a PIN later, edit and run `backend/set-pin.js` against the target database rather than editing `migrate.js` (its backfill only fires once, when `pin_hash` is still unset).
+Initial PINs for the two seeded accounts (Shop Owner, Store Manager) are set in `backend/migrate.js` (`INITIAL_PINS`) — read them there rather than here, so this doc can't go stale again like it just did. Barber PINs are set per-barber when they're registered from the Staff page. To change any PIN later, edit and run `backend/set-pin.js` against the target database rather than editing `migrate.js` (its backfill only fires once, when `pin_hash` is still unset).
 
 Session is stored in the browser (`localStorage`) after login; every other page redirects to `login.html` if there's no session. PINs are hashed with Node's built-in `scrypt` (not bcrypt, to avoid a native dependency) — fine for a low-stakes PIN, not intended as enterprise-grade auth.
 
-### Roles: exactly two account types
+### Roles: three account types
 
 - **Admin (owner):** full visibility into everything the business does — every page, including Settings.
-- **Manager:** runs day-to-day operations — every page except Settings. Can add **and delete** Appointments, Staff, and Inventory. Deletes on Staff and Inventory are soft deletes (an `is_active` flag) so sales/commission history tied to them is never lost — they just drop off the active roster/catalog. Appointment deletes are permanent (nothing else depends on them). There's no delete capability anywhere else in the app.
+- **Manager and Barber:** same access level — runs day-to-day operations, every page except Settings. Can add **and delete** Appointments, Staff, and Inventory. Deletes on Staff and Inventory are soft deletes (an `is_active` flag) so sales/commission history tied to them is never lost — they just drop off the active roster/catalog. Appointment deletes are permanent (nothing else depends on them). There's no delete capability anywhere else in the app.
 
-Barbers and receptionists are still real records (needed for POS attribution, commissions, and specialties) but **don't log into the app individually** — only Admin and Manager accounts do. When registering a barber/receptionist from the Staff page, no PIN is requested; when registering a manager, a PIN is required.
+Receptionists are still real records (kept for completeness) but **don't log into the app**. When registering a receptionist from the Staff page, no PIN is requested; when registering a manager or barber, a PIN is required.
 
 This is enforced client-side in `auth-guard.js` (hides the Settings nav link + redirects on direct navigation for the Admin-only page) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
 

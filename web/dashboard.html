@@ -683,7 +683,7 @@
   if (window.barberOSSession) {
     const pill = document.getElementById('roleViewPill');
     const role = window.barberOSSession.role;
-    pill.textContent = role === 'owner' ? 'ADMIN VIEW' : 'MANAGER VIEW';
+    pill.textContent = role === 'owner' ? 'ADMIN VIEW' : role === 'barber' ? 'BARBER VIEW' : 'MANAGER VIEW';
     pill.style.display = 'inline-flex';
   }
 
