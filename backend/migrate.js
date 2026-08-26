@@ -109,6 +109,26 @@ async function run() {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_login_sessions_shop_login ON login_sessions(shop_id, login_at DESC)
     `);
+
+    // One-time reset, requested by the shop owner, to clear out old/test
+    // appointment data and start fresh. Guarded by a flag so it only ever
+    // runs once, regardless of how many future deploys happen.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS migration_flags (
+        key TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    const flagCheck = await client.query(
+      `SELECT 1 FROM migration_flags WHERE key = 'appointments_reset_2026_08_25'`
+    );
+    if (!flagCheck.rows.length) {
+      const delResult = await client.query(`DELETE FROM appointments`); // cascades to appointment_services
+      await client.query(
+        `INSERT INTO migration_flags (key) VALUES ('appointments_reset_2026_08_25')`
+      );
+      console.log(`[migrate] one-time reset: cleared ${delResult.rowCount} appointment(s) to start fresh.`);
+    }
   } finally {
     client.release();
     await pool.end();
