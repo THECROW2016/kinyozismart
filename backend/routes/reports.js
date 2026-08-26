@@ -129,4 +129,73 @@ router.get('/customer-growth', async (req, res) => {
   }
 });
 
+// GET /api/reports/export?shop_id=&from=&to= -> row-level sales/expenses/commissions
+// for the Reports page's data export (CSV / printable report), as opposed to
+// the aggregated endpoints above which only feed on-screen charts/summaries.
+router.get('/export', async (req, res) => {
+  const { shop_id } = req.query;
+  if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
+  const { from, to } = dateRange(req);
+  try {
+    const sales = await pool.query(
+      `SELECT
+         sa.created_at,
+         COALESCE(cu.full_name, 'Walk-in') AS customer_name,
+         bu.full_name AS barber_name,
+         COALESCE(item_agg.items, '') AS items,
+         sa.subtotal, sa.total,
+         COALESCE(pay_agg.methods, '') AS payment_methods,
+         ru.full_name AS rung_up_by
+       FROM sales sa
+       LEFT JOIN customers cu ON cu.id = sa.customer_id
+       JOIN barbers br ON br.id = sa.barber_id
+       JOIN users bu ON bu.id = br.id
+       JOIN users ru ON ru.id = sa.created_by
+       LEFT JOIN LATERAL (
+         SELECT string_agg(
+           (CASE WHEN li.item_type = 'service' THEN s.name ELSE p.name END) || ' x' || li.quantity,
+           '; ' ORDER BY li.id
+         ) AS items
+         FROM sale_line_items li
+         LEFT JOIN services s ON s.id = li.service_id
+         LEFT JOIN products p ON p.id = li.product_id
+         WHERE li.sale_id = sa.id
+       ) item_agg ON true
+       LEFT JOIN LATERAL (
+         SELECT string_agg(DISTINCT sp.method::text, ', ') AS methods
+         FROM sale_payments sp WHERE sp.sale_id = sa.id
+       ) pay_agg ON true
+       WHERE sa.shop_id = $1 AND sa.created_at::date BETWEEN $2 AND $3
+       ORDER BY sa.created_at ASC`,
+      [shop_id, from, to]
+    );
+
+    const expenses = await pool.query(
+      `SELECT e.incurred_at, e.category, COALESCE(e.description, '') AS description,
+              e.amount, u.full_name AS recorded_by
+       FROM expenses e
+       LEFT JOIN users u ON u.id = e.created_by
+       WHERE e.shop_id = $1 AND e.incurred_at BETWEEN $2 AND $3
+       ORDER BY e.incurred_at ASC`,
+      [shop_id, from, to]
+    );
+
+    const commissions = await pool.query(
+      `SELECT sa.created_at, u.full_name AS barber_name, sa.total AS sale_total,
+              c.amount, c.is_paid_out
+       FROM commissions c
+       JOIN sales sa ON sa.id = c.sale_id
+       JOIN users u ON u.id = c.barber_id
+       WHERE sa.shop_id = $1 AND sa.created_at::date BETWEEN $2 AND $3
+       ORDER BY sa.created_at ASC`,
+      [shop_id, from, to]
+    );
+
+    res.json({ from, to, sales: sales.rows, expenses: expenses.rows, commissions: commissions.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to build export', detail: err.message });
+  }
+});
+
 module.exports = router;

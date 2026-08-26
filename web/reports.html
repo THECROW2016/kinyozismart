@@ -58,6 +58,30 @@
   .rep-row:last-child{border-bottom:none;}
   .rep-row .val{font-family:'IBM Plex Mono',monospace;}
 
+  .export-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:16px;}
+  .date-input{background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk);padding:8px 12px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color-scheme:dark;}
+  .export-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn-export{background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk);padding:10px 18px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;}
+  .btn-export:hover{border-color:var(--amber);color:var(--amber);}
+  .export-msg{font-size:12px;color:var(--chalk-dim);margin-top:10px;min-height:16px;}
+
+  .print-report{display:none;}
+  @media print{
+    body > .app{display:none !important;}
+    .print-report{
+      display:block !important;background:#fff;color:#111;font-family:'Inter',Arial,sans-serif;
+    }
+    .pr-shop{font-family:'Bebas Neue',sans-serif;font-size:26px;}
+    .pr-range{font-size:12px;color:#555;margin-bottom:18px;}
+    .pr-section{margin-bottom:22px;}
+    .pr-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;border-bottom:1px solid #ccc;padding-bottom:4px;}
+    .pr-table{width:100%;border-collapse:collapse;font-size:11px;}
+    .pr-table th,.pr-table td{text-align:left;padding:4px 6px;border-bottom:1px solid #eee;}
+    .pr-table th{color:#555;font-weight:600;}
+    .pr-summary div{font-size:12.5px;padding:2px 0;}
+    @page{margin:14mm;}
+  }
+
   @media (max-width:900px){
     .app{grid-template-columns:60px 1fr;}
     main{padding:22px 16px 50px;}
@@ -119,6 +143,26 @@
       <div class="summary-card profit"><div class="l">Profit</div><div class="n" id="sumProfit">—</div></div>
     </div>
 
+    <div class="card">
+      <div class="card-title">Export Data</div>
+      <div class="range-tabs" id="exportRangeTabs">
+        <div class="range-tab active" data-days="7">Last 7 days</div>
+        <div class="range-tab" data-days="30">Last 30 days</div>
+        <div class="range-tab" data-days="60">Last 60 days</div>
+        <div class="range-tab" data-days="custom">Custom range</div>
+      </div>
+      <div class="export-controls" id="exportCustomRange" style="display:none;">
+        <input type="date" class="date-input" id="exportFrom">
+        <span style="color:var(--chalk-dim);font-size:12.5px;">to</span>
+        <input type="date" class="date-input" id="exportTo">
+      </div>
+      <div class="export-actions">
+        <button class="btn-export" onclick="exportData('csv')">⬇ Download CSV</button>
+        <button class="btn-export" onclick="exportData('pdf')">🖨 Print / Save as PDF</button>
+      </div>
+      <div class="export-msg" id="exportMsg">Exports include Sales, Expenses, and Commissions for the selected period.</div>
+    </div>
+
     <div class="grid2">
       <div>
         <div class="card">
@@ -142,6 +186,24 @@
       </div>
     </div>
   </main>
+</div>
+
+<div class="print-report" id="printReport">
+  <div class="pr-shop">Kinyozi Management System</div>
+  <div class="pr-range" id="prRange"></div>
+  <div class="pr-section">
+    <div class="pr-title">Sales</div>
+    <table class="pr-table" id="prSalesTable"></table>
+  </div>
+  <div class="pr-section">
+    <div class="pr-title">Expenses</div>
+    <table class="pr-table" id="prExpensesTable"></table>
+  </div>
+  <div class="pr-section">
+    <div class="pr-title">Commissions</div>
+    <table class="pr-table" id="prCommissionsTable"></table>
+  </div>
+  <div class="pr-section pr-summary" id="prSummary"></div>
 </div>
 
 <script>
@@ -233,14 +295,173 @@
     });
   }
 
-  document.querySelectorAll('.range-tab').forEach(tab => {
+  document.querySelectorAll('#rangeTabs .range-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.range-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('#rangeTabs .range-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       rangeDays = Number(tab.dataset.days);
       loadReports();
     });
   });
+
+  // ---- Export ----
+  let exportRangeDays = 7;
+
+  (function initExportDefaults() {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - 6);
+    document.getElementById('exportFrom').value = dateStr(from);
+    document.getElementById('exportTo').value = dateStr(to);
+  })();
+
+  document.querySelectorAll('#exportRangeTabs .range-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#exportRangeTabs .range-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      exportRangeDays = tab.dataset.days === 'custom' ? 'custom' : Number(tab.dataset.days);
+      document.getElementById('exportCustomRange').style.display = exportRangeDays === 'custom' ? 'flex' : 'none';
+    });
+  });
+
+  function exportCurrentRange() {
+    if (exportRangeDays === 'custom') {
+      return { from: document.getElementById('exportFrom').value, to: document.getElementById('exportTo').value };
+    }
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - (exportRangeDays - 1));
+    return { from: dateStr(from), to: dateStr(to) };
+  }
+
+  function csvEscape(val) {
+    const s = String(val ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function toCsv(rows, columns) {
+    const header = columns.map(c => csvEscape(c.label)).join(',');
+    const lines = rows.map(r => columns.map(c => csvEscape(c.get(r))).join(','));
+    return '﻿' + [header, ...lines].join('\r\n'); // BOM so Excel reads UTF-8 correctly
+  }
+
+  function downloadBlob(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function fmtDateTime(iso) { return new Date(iso).toLocaleString('en-GB'); }
+
+  async function fetchExportData() {
+    const { from, to } = exportCurrentRange();
+    if (!from || !to) throw new Error('Pick both a start and end date.');
+    if (from > to) throw new Error('Start date must be before end date.');
+    const res = await fetch(`${API_BASE}/reports/export?shop_id=${SHOP_ID}&from=${from}&to=${to}`);
+    if (!res.ok) throw new Error('Failed to load export data.');
+    return res.json();
+  }
+
+  function downloadExportCsvs(data) {
+    const range = `${data.from}_to_${data.to}`;
+
+    downloadBlob(toCsv(data.sales, [
+      { label: 'Date', get: r => fmtDateTime(r.created_at) },
+      { label: 'Customer', get: r => r.customer_name },
+      { label: 'Barber', get: r => r.barber_name },
+      { label: 'Items', get: r => r.items },
+      { label: 'Subtotal', get: r => r.subtotal },
+      { label: 'Total', get: r => r.total },
+      { label: 'Payment Method', get: r => r.payment_methods },
+      { label: 'Rung Up By', get: r => r.rung_up_by }
+    ]), `sales_${range}.csv`, 'text/csv;charset=utf-8');
+
+    downloadBlob(toCsv(data.expenses, [
+      { label: 'Date', get: r => String(r.incurred_at).slice(0, 10) },
+      { label: 'Category', get: r => r.category },
+      { label: 'Description', get: r => r.description },
+      { label: 'Amount', get: r => r.amount },
+      { label: 'Recorded By', get: r => r.recorded_by || '' }
+    ]), `expenses_${range}.csv`, 'text/csv;charset=utf-8');
+
+    downloadBlob(toCsv(data.commissions, [
+      { label: 'Date', get: r => fmtDateTime(r.created_at) },
+      { label: 'Barber', get: r => r.barber_name },
+      { label: 'Sale Total', get: r => r.sale_total },
+      { label: 'Commission Amount', get: r => r.amount },
+      { label: 'Paid Out', get: r => r.is_paid_out ? 'Yes' : 'No' }
+    ]), `commissions_${range}.csv`, 'text/csv;charset=utf-8');
+  }
+
+  function renderPrintableReport(data) {
+    document.getElementById('prRange').textContent = `Report: ${data.from} to ${data.to}`;
+
+    const salesRows = data.sales.map(r => `<tr>
+      <td>${escapeHtml(fmtDateTime(r.created_at))}</td>
+      <td>${escapeHtml(r.customer_name)}</td>
+      <td>${escapeHtml(r.barber_name)}</td>
+      <td>${escapeHtml(r.items)}</td>
+      <td>${fmtKsh(r.total)}</td>
+      <td>${escapeHtml(r.payment_methods)}</td>
+    </tr>`).join('') || '<tr><td colspan="6">No sales in this range.</td></tr>';
+    document.getElementById('prSalesTable').innerHTML =
+      `<thead><tr><th>Date</th><th>Customer</th><th>Barber</th><th>Items</th><th>Total</th><th>Payment</th></tr></thead><tbody>${salesRows}</tbody>`;
+
+    const expenseRows = data.expenses.map(r => `<tr>
+      <td>${escapeHtml(String(r.incurred_at).slice(0, 10))}</td>
+      <td>${escapeHtml(r.category)}</td>
+      <td>${escapeHtml(r.description)}</td>
+      <td>${fmtKsh(r.amount)}</td>
+      <td>${escapeHtml(r.recorded_by || '')}</td>
+    </tr>`).join('') || '<tr><td colspan="5">No expenses in this range.</td></tr>';
+    document.getElementById('prExpensesTable').innerHTML =
+      `<thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Recorded By</th></tr></thead><tbody>${expenseRows}</tbody>`;
+
+    const commRows = data.commissions.map(r => `<tr>
+      <td>${escapeHtml(fmtDateTime(r.created_at))}</td>
+      <td>${escapeHtml(r.barber_name)}</td>
+      <td>${fmtKsh(r.sale_total)}</td>
+      <td>${fmtKsh(r.amount)}</td>
+      <td>${r.is_paid_out ? 'Yes' : 'No'}</td>
+    </tr>`).join('') || '<tr><td colspan="5">No commissions in this range.</td></tr>';
+    document.getElementById('prCommissionsTable').innerHTML =
+      `<thead><tr><th>Date</th><th>Barber</th><th>Sale Total</th><th>Commission</th><th>Paid Out</th></tr></thead><tbody>${commRows}</tbody>`;
+
+    const salesTotal = data.sales.reduce((s, r) => s + Number(r.total), 0);
+    const expTotal = data.expenses.reduce((s, r) => s + Number(r.amount), 0);
+    const commTotal = data.commissions.reduce((s, r) => s + Number(r.amount), 0);
+    document.getElementById('prSummary').innerHTML = `
+      <div class="pr-title">Summary</div>
+      <div>Total Revenue: ${fmtKsh(salesTotal)}</div>
+      <div>Total Expenses: ${fmtKsh(expTotal)}</div>
+      <div>Total Commissions: ${fmtKsh(commTotal)}</div>
+      <div>Net Profit: ${fmtKsh(salesTotal - expTotal - commTotal)}</div>
+    `;
+  }
+
+  async function exportData(format) {
+    const msg = document.getElementById('exportMsg');
+    msg.textContent = 'Preparing export…';
+    try {
+      const data = await fetchExportData();
+      if (format === 'csv') {
+        downloadExportCsvs(data);
+        msg.textContent = `Downloaded 3 CSV files (sales, expenses, commissions) for ${data.from} to ${data.to}.`;
+      } else {
+        renderPrintableReport(data);
+        msg.textContent = 'Exports include Sales, Expenses, and Commissions for the selected period.';
+        window.print();
+      }
+    } catch (err) {
+      msg.textContent = err.message || 'Export failed. Please try again.';
+    }
+  }
 
   let toastTimer;
   function comingSoon(feature) {

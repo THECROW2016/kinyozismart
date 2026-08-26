@@ -6,8 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "db:migrate": "psql \"$DATABASE_URL\" -f ../db/schema.sql",
-    "db:seed": "psql \"$DATABASE_URL\" -f ../db/seed.sql"
+    "db:migrate": "node migrate.js",
+    "db:set-pin": "node set-pin.js"
   },
   "engines": {
     "node": ">=18"

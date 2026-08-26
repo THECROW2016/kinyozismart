@@ -18,9 +18,10 @@
   let session = null;
   try { session = JSON.parse(localStorage.getItem('barberos_session') || 'null'); } catch (e) { session = null; }
 
-  // The app has exactly two account types. Any other role (e.g. a barber
-  // record that should never have had a login path) is rejected outright.
-  if (session && !['owner', 'manager'].includes(session.role)) {
+  // Three account types can log in: owner, manager, barber. Any other role
+  // (e.g. a receptionist record that should never have had a login path) is
+  // rejected outright.
+  if (session && !['owner', 'manager', 'barber'].includes(session.role)) {
     recordLogout(session.session_id);
     localStorage.removeItem('barberos_session');
     session = null;
@@ -47,13 +48,13 @@
     window.location.href = 'login.html';
   };
 
-  // Role-based access: the app has exactly two account types.
+  // Role-based access: three account types can log in.
   // owner (admin) = full visibility into everything the business does.
-  // manager = runs day-to-day operations, can add records everywhere except
-  // Settings (shop configuration / M-Pesa credentials stay admin-only).
+  // manager and barber = same access level, everywhere except Settings
+  // (shop configuration / M-Pesa credentials stay admin-only).
   const PAGE_ACCESS = {
     'settings.html': ['owner']
-    // every other page is open to both owner and manager
+    // every other page is open to owner, manager, and barber
   };
 
   function homeFor(role) {

@@ -19,19 +19,21 @@ This is now a real, wired-up full-stack app, not just mockups:
 - **`backend/`** — Node.js + Express API (`server.js`) connected to PostgreSQL via `pg`. Serves the JSON API under `/api/*` and the static frontend from `web/`.
 - **`web/`** — the dashboard, POS, and queue pages now fetch live data from the API and write real changes back (add a walk-in, call/start a queue entry, complete a sale) instead of showing static mock content.
 - **`db/schema.sql`** — run this first against a fresh database.
-- **`db/seed.sql`** — optional demo data (one shop, 4 barbers, 8 customers, services, products, and a live queue) matching what's shown in the UI.
+- **`db/seed.sql`** — baseline data: one shop plus the Owner account (the Manager account is created separately by `backend/migrate.js`, which also hashes its PIN). No demo barbers, customers, services, or transactions — add those for real once the app is live.
 
 ### Run it locally
 
 ```bash
-# 1. Create a Postgres database and load the schema
+# 1. Create a Postgres database, then load schema + seed data and hash the
+#    login PINs in one go (this is what migrate.js does; raw psql alone
+#    won't set pin_hash, so login won't work without this step).
+#    Note: migrate.js reads DATABASE_URL specifically, not PGHOST/etc.
 createdb barberos
-psql -d barberos -f db/schema.sql
-psql -d barberos -f db/seed.sql   # optional demo data
-
-# 2. Start the backend (also serves the frontend)
 cd backend
 npm install
+DATABASE_URL="postgres://postgres:yourpassword@localhost:5432/barberos" node migrate.js
+
+# 2. Start the backend (also serves the frontend)
 PGHOST=localhost PGUSER=postgres PGPASSWORD=yourpassword PGDATABASE=barberos npm start
 
 # 3. Open the app
@@ -42,9 +44,9 @@ PGHOST=localhost PGUSER=postgres PGPASSWORD=yourpassword PGDATABASE=barberos npm
 
 ### Deploy on Railway
 
-1. Create a new Railway project from this GitHub repo.
-2. Add a **PostgreSQL** plugin to the project — Railway sets `DATABASE_URL` automatically, which `backend/db.js` already reads in preference to individual `PGHOST`/`PGUSER`/etc. vars.
-3. Run the schema once against the new database (e.g. `psql "$DATABASE_URL" -f db/schema.sql`, and optionally `db/seed.sql` for demo data) — from your machine or a Railway one-off shell.
+1. Create a new Railway project from this GitHub repo. Leave the service's **Root Directory** at the repo root (blank) — `nixpacks.toml` expects to run from there (`cd backend && npm ci`), and `server.js` serves the frontend from `../web`, so both `backend/` and `web/` need to be in the build context together.
+2. Add a **PostgreSQL** plugin to the same project — Railway sets `DATABASE_URL` automatically, which `backend/db.js` already reads in preference to individual `PGHOST`/`PGUSER`/etc. vars.
+3. In the web service's Settings → Deploy, set the **Pre-Deploy Command** to `node backend/migrate.js`. This applies `db/schema.sql`/`db/seed.sql` on first run and is safe to leave in place permanently — it's idempotent and also carries forward schema/data fixes (e.g. the login audit trail table, PIN-security cleanup) on every subsequent deploy.
 4. Deploy the web service — `nixpacks.toml` at the repo root tells Railway to install dependencies from `backend/` and start with `node backend/server.js`.
 5. Once deployed, the dashboard/POS/queue pages are served directly from the same service at its Railway-provided URL.
 
@@ -56,23 +58,18 @@ PGHOST=localhost PGUSER=postgres PGPASSWORD=yourpassword PGDATABASE=barberos npm
 
 ### Login (PIN-based)
 
-The app now opens on a landing page (`index.html`) with two entry points — **Admin Login** and **Staff Login** — each leading to a PIN pad (`login.html`). Pick your name, enter a 4-digit PIN.
+The app opens on a landing page (`index.html`) with three entry points — **Admin Login**, **Manager Login**, and **Barber Login** — each leading to a PIN pad (`login.html?group=admin|manager|barber`). Pick your name, enter a 4-digit PIN.
 
-Demo PINs seeded by `migrate.js`:
-
-| Name | Role | PIN |
-|---|---|---|
-| Shop Owner | admin (owner) | `1111` |
-| Store Manager | manager | `1212` |
+Initial PINs for the two seeded accounts (Shop Owner, Store Manager) are set in `backend/migrate.js` (`INITIAL_PINS`) — read them there rather than here, so this doc can't go stale again like it just did. Barber PINs are set per-barber when they're registered from the Staff page. To change any PIN later, edit and run `backend/set-pin.js` against the target database rather than editing `migrate.js` (its backfill only fires once, when `pin_hash` is still unset).
 
 Session is stored in the browser (`localStorage`) after login; every other page redirects to `login.html` if there's no session. PINs are hashed with Node's built-in `scrypt` (not bcrypt, to avoid a native dependency) — fine for a low-stakes PIN, not intended as enterprise-grade auth.
 
-### Roles: exactly two account types
+### Roles: three account types
 
 - **Admin (owner):** full visibility into everything the business does — every page, including Settings.
-- **Manager:** runs day-to-day operations — every page except Settings. Can add **and delete** Appointments, Staff, and Inventory. Deletes on Staff and Inventory are soft deletes (an `is_active` flag) so sales/commission history tied to them is never lost — they just drop off the active roster/catalog. Appointment deletes are permanent (nothing else depends on them). There's no delete capability anywhere else in the app.
+- **Manager and Barber:** same access level — runs day-to-day operations, every page except Settings. Can add **and delete** Appointments, Staff, and Inventory. Deletes on Staff and Inventory are soft deletes (an `is_active` flag) so sales/commission history tied to them is never lost — they just drop off the active roster/catalog. Appointment deletes are permanent (nothing else depends on them). There's no delete capability anywhere else in the app.
 
-Barbers and receptionists are still real records (needed for POS attribution, commissions, and specialties) but **don't log into the app individually** — only Admin and Manager accounts do. When registering a barber/receptionist from the Staff page, no PIN is requested; when registering a manager, a PIN is required.
+Receptionists are still real records (kept for completeness) but **don't log into the app**. When registering a receptionist from the Staff page, no PIN is requested; when registering a manager or barber, a PIN is required.
 
 This is enforced client-side in `auth-guard.js` (hides the Settings nav link + redirects on direct navigation for the Admin-only page) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
 
