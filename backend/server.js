@@ -19,6 +19,7 @@ const authRoutes = require('./routes/auth');
 const pool = require('./db');
 
 const app = express();
+app.set('trust proxy', 1); // Railway sits behind a reverse proxy; needed for correct client IPs in rate limiting
 const PORT = process.env.PORT || 3000;
 
 // Security headers. CSP is scoped to what this app actually loads (Google

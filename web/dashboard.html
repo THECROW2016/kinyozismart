@@ -18,6 +18,7 @@
     --barber-blue:#2C4A7C;
     --amber:#E8A33D;
     --amber-dim:#8A6428;
+    --green:#4E9A63;
     --radius:14px;
   }
   *{box-sizing:border-box;}
@@ -330,6 +331,16 @@
   .appt-name{font-size:13.5px;font-weight:600;}
   .appt-service{font-size:12px;color:var(--chalk-dim);}
 
+  .login-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:9px 0;border-bottom:1px dashed var(--ink-line);font-size:12.5px;
+  }
+  .login-row:last-child{border-bottom:none;}
+  .login-name{font-weight:600;}
+  .login-role{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--chalk-dim);margin-left:6px;}
+  .login-time{font-family:'IBM Plex Mono',monospace;color:var(--chalk-dim);font-size:11.5px;text-align:right;}
+  .login-active{color:var(--green);}
+
   /* Top barber */
   .barber-card{
     display:flex;
@@ -488,26 +499,18 @@
             <span class="card-title">Upcoming Appointments</span>
             <span class="card-link">Calendar</span>
           </div>
-          <div class="appt-row">
-            <span class="appt-time">4:30</span>
-            <div>
-              <div class="appt-name">Mary Njeri</div>
-              <div class="appt-service">Braids — with Faith</div>
-            </div>
+          <div id="upcomingAppts">
+            <div class="appt-row"><div><div class="appt-name">Loading…</div></div></div>
           </div>
-          <div class="appt-row">
-            <span class="appt-time">5:00</span>
-            <div>
-              <div class="appt-name">Dennis Kamau</div>
-              <div class="appt-service">Haircut + Shave — with Kevin</div>
-            </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Login History</span>
+            <span class="card-link" onclick="window.location.href='staff.html'">View all</span>
           </div>
-          <div class="appt-row">
-            <span class="appt-time">5:45</span>
-            <div>
-              <div class="appt-name">Peter Omondi</div>
-              <div class="appt-service">Kids cut — with Njoroge</div>
-            </div>
+          <div id="loginHistoryList">
+            <div class="login-row"><span class="login-name">Loading…</span></div>
           </div>
         </div>
       </div>
@@ -676,9 +679,69 @@
   updateOpenStatus();
   setInterval(updateOpenStatus, 60000);
 
+  async function loadUpcomingAppointments() {
+    const el = document.getElementById('upcomingAppts');
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await fetch(`${API_BASE}/appointments?shop_id=${SHOP_ID}&date=${today}`);
+      const appts = await res.json();
+      const now = new Date();
+      const upcoming = appts.filter(a => new Date(a.scheduled_at) >= now).slice(0, 5);
+
+      if (!upcoming.length) {
+        el.innerHTML = `<div class="appt-row"><div><div class="appt-name">No more appointments today</div></div></div>`;
+        return;
+      }
+      el.innerHTML = upcoming.map(a => {
+        const time = new Date(a.scheduled_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        const services = (a.services || []).filter(Boolean).join(' + ') || 'No services listed';
+        const withBarber = a.barber_name ? ` — with ${escapeHtml(a.barber_name)}` : '';
+        return `
+          <div class="appt-row">
+            <span class="appt-time">${time}</span>
+            <div>
+              <div class="appt-name">${escapeHtml(a.customer_name)}</div>
+              <div class="appt-service">${escapeHtml(services)}${withBarber}</div>
+            </div>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      el.innerHTML = `<div class="appt-row"><div><div class="appt-name">Couldn't load appointments</div></div></div>`;
+    }
+  }
+
+  function fmtLoginTime(iso) {
+    return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function loadLoginHistory() {
+    const el = document.getElementById('loginHistoryList');
+    try {
+      const res = await fetch(`${API_BASE}/auth/sessions?shop_id=${SHOP_ID}&limit=6`);
+      const sessions = await res.json();
+      if (!sessions.length) {
+        el.innerHTML = `<div class="login-row"><span class="login-name">No login activity yet.</span></div>`;
+        return;
+      }
+      el.innerHTML = sessions.map(s => `
+        <div class="login-row">
+          <span class="login-name">${escapeHtml(s.full_name)}<span class="login-role">${escapeHtml(s.role)}</span></span>
+          <span class="login-time">${s.logout_at
+            ? fmtLoginTime(s.logout_at) + ' out'
+            : `<span class="login-active">● active</span> since ${fmtLoginTime(s.login_at)}`
+          }</span>
+        </div>`).join('');
+    } catch (err) {
+      el.innerHTML = `<div class="login-row"><span class="login-name">Couldn't load login history.</span></div>`;
+    }
+  }
+
   loadDashboard();
   loadQueuePreview();
+  loadUpcomingAppointments();
+  loadLoginHistory();
   setInterval(loadQueuePreview, 15000); // refresh queue every 15s
+  setInterval(loadLoginHistory, 30000);
 
   if (window.barberOSSession) {
     const pill = document.getElementById('roleViewPill');
