@@ -73,6 +73,37 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/settings', settingsRoutes);
+
+// TEMPORARY — one-time cleanup for exact-duplicate services caused by a
+// deploy race condition (the poster catalog got inserted twice on 2026-09-01).
+// Only removes rows that are byte-for-byte identical (same shop, name,
+// category, price) — never touches services that merely look similar, since
+// those may be real pre-existing entries with their own sale history.
+// Remove this route in the next commit after it's been run once.
+app.post('/api/admin/dedupe-services-2026-09-01', async (req, res) => {
+  if (req.query.secret !== 'kinyozi-dedupe-9f3a1c') {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  try {
+    const before = await pool.query('SELECT COUNT(*) FROM services');
+    const del = await pool.query(
+      `DELETE FROM services a USING services b
+       WHERE a.shop_id = b.shop_id AND a.name = b.name
+         AND a.category IS NOT DISTINCT FROM b.category
+         AND a.price = b.price AND a.id > b.id
+       RETURNING a.id`
+    );
+    const after = await pool.query('SELECT COUNT(*) FROM services');
+    res.json({
+      before: Number(before.rows[0].count),
+      deleted_exact_duplicates: del.rowCount,
+      after: Number(after.rows[0].count)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'cleanup failed', detail: err.message });
+  }
+});
 app.use('/api/auth', authRoutes);
 
 app.get('/api/health', async (req, res) => {
