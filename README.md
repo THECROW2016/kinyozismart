@@ -74,6 +74,10 @@ Barbers, beauticians, and receptionists are real records (needed for POS attribu
 
 This is enforced client-side in `auth-guard.js` (hides nav links + redirects on direct navigation to pages a role can't reach, and exposes a `window.barberOSCanDelete` flag pages check before rendering delete controls) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
 
+### Sales Calendar
+
+The Dashboard has a month-view calendar (below the main stats grid) showing each day's total sales and sale count at a glance — days with sales are highlighted, today is outlined, and clicking a day with sales shows the exact total and count. Prev/next buttons navigate between months. It reuses the existing `/api/reports/sales` daily-breakdown endpoint, so there's no separate data source to keep in sync.
+
 ### Barbers & Beauticians
 
 Both are "service provider" staff — they get a row in the `barbers` table (specialties, commission rate, performance tracking) and show up together in the POS provider picker, the Staff page, and Reports. The Dashboard's **Staff Performance** panel ranks every barber and beautician by today's revenue, highest to lowest — not just a single "top performer."

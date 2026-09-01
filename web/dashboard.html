@@ -341,6 +341,41 @@
   .login-time{font-family:'IBM Plex Mono',monospace;color:var(--chalk-dim);font-size:11.5px;text-align:right;}
   .login-active{color:var(--green);}
 
+  .cal-nav{display:flex;align-items:center;gap:10px;}
+  .cal-nav-btn{
+    background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk);
+    width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .cal-nav-btn:hover{border-color:var(--amber);color:var(--amber);}
+  .cal-month-label{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--chalk-dim);min-width:110px;text-align:center;}
+  .cal-weekdays{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--chalk-dim);text-align:center;
+  }
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-day{
+    aspect-ratio:1;border-radius:8px;background:var(--ink);border:1px solid var(--ink-line);
+    padding:6px;display:flex;flex-direction:column;justify-content:space-between;
+    cursor:default;transition:border-color .15s ease;
+  }
+  .cal-day.empty{background:transparent;border:none;}
+  .cal-day.has-sales{border-color:rgba(232,163,61,.35);background:rgba(232,163,61,.06);cursor:pointer;}
+  .cal-day.has-sales:hover{border-color:var(--amber);}
+  .cal-day.today{box-shadow:0 0 0 1.5px var(--amber);}
+  .cal-day-num{font-size:11px;color:var(--chalk-dim);font-family:'IBM Plex Mono',monospace;}
+  .cal-day.has-sales .cal-day-num{color:var(--chalk);}
+  .cal-day-amount{font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:var(--amber);font-weight:600;line-height:1.2;}
+  .cal-day-count{font-size:9px;color:var(--chalk-dim);}
+  .cal-summary{margin-top:14px;padding-top:14px;border-top:1px dashed var(--ink-line);display:flex;gap:24px;flex-wrap:wrap;}
+  .cal-summary-stat .n{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--amber);}
+  .cal-summary-stat .l{font-size:10.5px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+
+  @media (max-width:600px){
+    .cal-day-amount{font-size:9px;}
+    .cal-weekdays span{font-size:9px;}
+  }
+
   /* Top barber */
   .barber-card{
     display:flex;
@@ -532,6 +567,22 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-head">
+        <span class="card-title">Sales Calendar</span>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="changeCalendarMonth(-1)">‹</button>
+          <span class="cal-month-label" id="calMonthLabel"></span>
+          <button class="cal-nav-btn" onclick="changeCalendarMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-weekdays">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      <div class="cal-grid" id="calGrid">Loading…</div>
+      <div class="cal-summary" id="calSummary"></div>
     </div>
   </main>
 </div>
@@ -761,9 +812,81 @@
     }
   }
 
+  // ---- Sales Calendar ----
+  let calendarDate = new Date();
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function fmtCalAmount(n) {
+    const num = Number(n);
+    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(num);
+  }
+
+  async function loadCalendar() {
+    const grid = document.getElementById('calGrid');
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth(); // 0-indexed
+    document.getElementById('calMonthLabel').textContent = calendarDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const fromStr = `${year}-${pad2(month + 1)}-01`;
+    const toStr = `${year}-${pad2(month + 1)}-${pad2(lastDay.getDate())}`;
+
+    try {
+      const res = await fetch(`${API_BASE}/reports/sales?shop_id=${SHOP_ID}&from=${fromStr}&to=${toStr}`);
+      const data = await res.json();
+      const byDay = {};
+      (data.daily || []).forEach(d => { byDay[d.day.slice(0, 10)] = d; });
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const leadingBlanks = firstDay.getDay(); // 0 = Sunday
+      let html = '';
+      for (let i = 0; i < leadingBlanks; i++) html += `<div class="cal-day empty"></div>`;
+
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
+        const entry = byDay[dateStr];
+        const isToday = dateStr === todayStr;
+        const hasSales = entry && Number(entry.total) > 0;
+        const classes = ['cal-day'];
+        if (isToday) classes.push('today');
+        if (hasSales) classes.push('has-sales');
+        html += `
+          <div class="${classes.join(' ')}" ${hasSales ? `onclick="showCalDayDetail('${dateStr}', ${entry.total}, ${entry.sale_count})"` : ''}>
+            <div class="cal-day-num">${d}</div>
+            ${hasSales ? `<div><div class="cal-day-amount">${fmtCalAmount(entry.total)}</div><div class="cal-day-count">${entry.sale_count} sale${entry.sale_count == 1 ? '' : 's'}</div></div>` : ''}
+          </div>`;
+      }
+      grid.innerHTML = html;
+
+      document.getElementById('calSummary').innerHTML = `
+        <div class="cal-summary-stat"><div class="n">${fmtKsh(data.total)}</div><div class="l">Month Total</div></div>
+        <div class="cal-summary-stat"><div class="n">${data.sale_count}</div><div class="l">Sales This Month</div></div>
+      `;
+    } catch (err) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--chalk-dim);padding:20px;">Couldn't load sales calendar.</div>`;
+    }
+  }
+
+  function changeCalendarMonth(delta) {
+    calendarDate.setMonth(calendarDate.getMonth() + delta);
+    loadCalendar();
+  }
+
+  function showCalDayDetail(dateStr, total, count) {
+    const toast = document.getElementById('railToast');
+    const label = new Date(dateStr).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    toast.textContent = `${label}: ${fmtKsh(total)} across ${count} sale${count == 1 ? '' : 's'}`;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
   loadDashboard();
   loadQueuePreview();
   loadUpcomingAppointments();
+  loadCalendar();
   setInterval(loadQueuePreview, 15000); // refresh queue every 15s
 
   // Login History is owner-only — the shop owner is the only one who should
