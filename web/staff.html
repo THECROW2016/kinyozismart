@@ -160,8 +160,8 @@
 
     <div class="staff-grid" id="staffGrid">Loading…</div>
 
-    <div class="login-history-card">
-      <div class="lh-title">Login History <span class="lh-sub">— Admin &amp; Manager sign-in activity</span></div>
+    <div class="login-history-card" id="loginHistoryCard">
+      <div class="lh-title">Login History <span class="lh-sub">— Admin sign-in activity</span></div>
       <table class="lh-table">
         <thead><tr><th>Account</th><th>Role</th><th>Logged In</th><th>Logged Out</th></tr></thead>
         <tbody id="loginHistoryBody"><tr><td colspan="4" class="lh-empty">Loading…</td></tr></tbody>
@@ -404,13 +404,20 @@
     }
   }
 
-  // Owner, manager, and barber can all add staff (same access level for manager/barber)
-  if (window.barberOSSession && ['owner', 'manager', 'barber'].includes(window.barberOSSession.role)) {
+  // Both admin (owner) and manager can add staff — manager can add, not delete
+  if (window.barberOSSession && ['owner', 'manager'].includes(window.barberOSSession.role)) {
     document.getElementById('addStaffBtn').style.display = 'inline-block';
   }
 
   loadStaff();
-  loadLoginHistory();
+
+  // Login History is owner-only
+  if (window.barberOSSession && window.barberOSSession.role === 'owner') {
+    loadLoginHistory();
+  } else {
+    const card = document.getElementById('loginHistoryCard');
+    if (card) card.style.display = 'none';
+  }
 </script>
 </body>
 </html>

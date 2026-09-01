@@ -80,7 +80,7 @@ Both are "service provider" staff — they get a row in the `barbers` table (spe
 
 ### Login history
 
-Every Admin/Manager/Secretary login and logout is recorded (`login_sessions` table) with a timestamp for each. Both the Dashboard and the Staff page show a "Login History" panel — who logged in, their role, when, and when they logged out (or "still logged in" if the session is active). This is separate from barber/beautician shift clock-in/out (which is about attendance for commission purposes, not app access).
+Every Admin/Manager/Secretary login and logout is recorded (`login_sessions` table) with a timestamp for each. **Only the Admin (owner) can see it** — the "Login History" panel on both the Dashboard and the Staff page is hidden from Manager and Secretary. This is separate from barber/beautician shift clock-in/out (which is about attendance for commission purposes, not app access).
 
 ### Services catalog
 

@@ -239,6 +239,31 @@ async function run() {
       await client.query(`INSERT INTO migration_flags (key) VALUES ('shop_phone_update_2026_09_01')`);
       console.log('[migrate] one-time: updated shop contact number to 0722363333.');
     }
+    // One-time: barbers with clearly female first names should be
+    // classified as beauticians instead. Only the confident cases are
+    // reclassified automatically — genuinely ambiguous names are left alone
+    // and flagged in the log for a manual decision instead of guessed at.
+    const genderFlag = await client.query(
+      `SELECT 1 FROM migration_flags WHERE key = 'barber_beautician_reclassify_2026_09_01'`
+    );
+    if (!genderFlag.rows.length) {
+      const RECLASSIFY_TO_BEAUTICIAN = ['Christine', 'Diana', 'Fridah', 'Hope', 'Irene', 'Moureen'];
+      const reclass = await client.query(
+        `UPDATE users SET role = 'beautician'
+         WHERE role = 'barber' AND full_name = ANY($1) RETURNING full_name`,
+        [RECLASSIFY_TO_BEAUTICIAN]
+      );
+      await client.query(`INSERT INTO migration_flags (key) VALUES ('barber_beautician_reclassify_2026_09_01')`);
+      console.log(`[migrate] one-time: reclassified ${reclass.rows.length} staff from barber to beautician: ${reclass.rows.map(r => r.full_name).join(', ')}`);
+
+      const ambiguous = await client.query(
+        `SELECT full_name FROM users WHERE role = 'barber' AND full_name = ANY($1)`,
+        [['Egide', 'Famous']]
+      );
+      if (ambiguous.rows.length) {
+        console.log(`[migrate] NOTE: left unchanged pending manual confirmation (ambiguous name): ${ambiguous.rows.map(r => r.full_name).join(', ')}`);
+      }
+    }
   } finally {
     client.release();
     await pool.end();

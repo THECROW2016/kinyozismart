@@ -522,7 +522,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="loginHistoryCard">
           <div class="card-head">
             <span class="card-title">Login History</span>
             <span class="card-link" onclick="window.location.href='staff.html'">View all</span>
@@ -764,9 +764,17 @@
   loadDashboard();
   loadQueuePreview();
   loadUpcomingAppointments();
-  loadLoginHistory();
   setInterval(loadQueuePreview, 15000); // refresh queue every 15s
-  setInterval(loadLoginHistory, 30000);
+
+  // Login History is owner-only — the shop owner is the only one who should
+  // see who's been logging in and out.
+  if (window.barberOSSession && window.barberOSSession.role === 'owner') {
+    loadLoginHistory();
+    setInterval(loadLoginHistory, 30000);
+  } else {
+    const card = document.getElementById('loginHistoryCard');
+    if (card) card.style.display = 'none';
+  }
 
   if (window.barberOSSession) {
     const pill = document.getElementById('roleViewPill');
