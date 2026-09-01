@@ -78,6 +78,8 @@ This is enforced client-side in `auth-guard.js` (hides nav links + redirects on 
 
 Both are "service provider" staff — they get a row in the `barbers` table (specialties, commission rate, performance tracking) and show up together in the POS provider picker, the Staff page, and Reports. The Dashboard's **Staff Performance** panel ranks every barber and beautician by today's revenue, highest to lowest — not just a single "top performer."
 
+**Star rating is earned automatically**, not set manually: it's `floor(lifetime services performed / 50) × 0.5`, so every 50 completed services earns half a star. The Staff page shows each provider's lifetime total services alongside their current rating and how many services remain until their next star.
+
 ### Login history
 
 Every Admin/Manager/Secretary login and logout is recorded (`login_sessions` table) with a timestamp for each. **Only the Admin (owner) can see it** — the "Login History" panel on both the Dashboard and the Staff page is hidden from Manager and Secretary. This is separate from barber/beautician shift clock-in/out (which is about attendance for commission purposes, not app access).

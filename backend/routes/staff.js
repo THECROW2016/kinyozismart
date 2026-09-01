@@ -13,10 +13,12 @@ router.get('/', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT
          u.id, u.full_name, u.phone, u.role, u.photo_url, u.is_active,
-         b.specialties, b.commission_type, b.commission_rate, b.is_available, b.rating_avg,
+         b.specialties, b.commission_type, b.commission_rate, b.is_available,
          COALESCE(perf.services_count, 0) AS services_today,
          COALESCE(perf.revenue_today, 0) AS revenue_today,
          COALESCE(comm.commission_today, 0) AS commission_today,
+         COALESCE(lifetime.total_services, 0) AS total_services,
+         FLOOR(COALESCE(lifetime.total_services, 0) / 50.0) * 0.5 AS rating_avg,
          att.clock_in, att.clock_out
        FROM users u
        LEFT JOIN barbers b ON b.id = u.id
@@ -31,6 +33,16 @@ router.get('/', async (req, res) => {
          WHERE s.shop_id = $1 AND s.created_at::date = CURRENT_DATE
          GROUP BY c.barber_id
        ) comm ON comm.barber_id = u.id
+       LEFT JOIN (
+         -- Lifetime count of individual services performed (not sale/transaction
+         -- count — one sale can include several services). Rating is earned
+         -- automatically: +0.5 stars for every 50 services completed.
+         SELECT s.barber_id, COUNT(*) AS total_services
+         FROM sale_line_items li
+         JOIN sales s ON s.id = li.sale_id
+         WHERE li.item_type = 'service' AND s.shop_id = $1
+         GROUP BY s.barber_id
+       ) lifetime ON lifetime.barber_id = u.id
        LEFT JOIN LATERAL (
          SELECT clock_in, clock_out FROM attendance
          WHERE barber_id = u.id AND clock_in::date = CURRENT_DATE
