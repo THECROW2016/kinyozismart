@@ -67,6 +67,8 @@
     display:flex;align-items:center;justify-content:space-between;cursor:pointer;
   }
   .select-box .arrow{color:var(--chalk-dim);font-size:11px;}
+  .pill-category{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--amber);font-weight:700;margin:14px 0 8px;}
+  .pill-category:first-child{margin-top:0;}
   .pill-row{display:flex;flex-wrap:wrap;gap:8px;}
   .pill{
     border:1px solid var(--ink-line);border-radius:999px;padding:8px 14px;font-size:13px;
@@ -224,7 +226,7 @@
 
         <div class="card" style="margin-bottom:20px;">
           <div class="card-title">Services</div>
-          <div class="pill-row" id="servicePills">Loading services…</div>
+          <div id="servicePills">Loading services…</div>
         </div>
 
         <div class="card">
@@ -328,10 +330,22 @@
     const customers = await customersRes.json();
     shopInfo = await shopRes.json();
 
-    document.getElementById('servicePills').innerHTML = services.map(s => `
-      <div class="pill" data-id="${s.id}" data-price="${s.price}" onclick="toggleService('${s.id}')">
-        ${escapeHtml(s.name)} <span class="price">${fmtKsh(s.price)}</span>
-      </div>`).join('');
+    const svcGroups = new Map();
+    for (const s of services) {
+      const cat = s.category || 'Other';
+      if (!svcGroups.has(cat)) svcGroups.set(cat, []);
+      svcGroups.get(cat).push(s);
+    }
+    let svcHtml = '';
+    for (const [cat, list] of svcGroups) {
+      svcHtml += `<div class="pill-category">${escapeHtml(cat)}</div><div class="pill-row">`;
+      svcHtml += list.map(s => `
+        <div class="pill" data-id="${s.id}" data-price="${s.price}" onclick="toggleService('${s.id}')">
+          ${escapeHtml(s.name)} <span class="price">${fmtKsh(s.price)}</span>
+        </div>`).join('');
+      svcHtml += `</div>`;
+    }
+    document.getElementById('servicePills').innerHTML = svcHtml;
 
     document.getElementById('productRows').innerHTML = products.map(p => `
       <div class="product-row">

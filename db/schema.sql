@@ -127,6 +127,7 @@ CREATE TABLE services (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id        UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
   name           TEXT NOT NULL,
+  category       TEXT,
   price          NUMERIC(10,2) NOT NULL,
   duration_mins  INTEGER NOT NULL DEFAULT 30,
   is_active      BOOLEAN NOT NULL DEFAULT true

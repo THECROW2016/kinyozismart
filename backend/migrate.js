@@ -149,6 +149,96 @@ async function run() {
       );
       console.log(`[migrate] one-time reset: cleared ${delResult.rowCount} appointment(s) to start fresh.`);
     }
+
+    // Ensure services.category exists even on databases migrated before
+    // categorized services were added
+    await client.query(`ALTER TABLE services ADD COLUMN IF NOT EXISTS category TEXT`);
+
+    // One-time: populate the real service menu (Men's Den Executive Barbershop
+    // & Spa price list) with categories, matching the shop's printed poster.
+    // Additive only — never deletes any service already entered manually.
+    const catalogFlag = await client.query(
+      `SELECT 1 FROM migration_flags WHERE key = 'services_catalog_poster_2026_09_01'`
+    );
+    if (!catalogFlag.rows.length) {
+      const SHOP_ID = '11111111-1111-1111-1111-111111111111';
+      const CATALOG = [
+        // Cuts
+        ['Haircut — Men', 'Cuts', 1000, 30],
+        ['Haircut — Kids', 'Cuts', 500, 20],
+        ['Ladies Cut', 'Cuts', 2000, 45],
+        ['Caucasian Clippers', 'Cuts', 2000, 30],
+        ['Caucasian Scissors', 'Cuts', 2000, 30],
+        ['Beard Cut', 'Cuts', 500, 15],
+        ['Teens', 'Cuts', 600, 25],
+        ['Kids Cut & Dye', 'Cuts', 1000, 30],
+        // Dyes
+        ['Black Shampoo — Application Only', 'Dyes', 1000, 30],
+        ['Black Shampoo — Shave & Application', 'Dyes', 1500, 45],
+        ['Bigen Speedy — Application Only', 'Dyes', 1000, 30],
+        ['Bigen Speedy — Shave & Application', 'Dyes', 2500, 45],
+        ['Bigen Cream — Application Only', 'Dyes', 1500, 30],
+        ['Bigen Cream — Shave & Application', 'Dyes', 2000, 45],
+        ['Cream of Nature', 'Dyes', 1500, 40],
+        ['Revlon', 'Dyes', 2000, 40],
+        ['Shave & Own Dye', 'Dyes', 1300, 30],
+        ['Hair Treatment', 'Dyes', 1000, 30],
+        ['Head Scrub', 'Dyes', 1500, 20],
+        ['Texturizer', 'Dyes', 1000, 30],
+        ['Dye With Haircut', 'Dyes', 1500, 45],
+        // Spa
+        ['Nail Trim', 'Spa', 500, 15],
+        ['Manicure', 'Spa', 1000, 30],
+        ['Pedicure', 'Spa', 2000, 40],
+        ['Charcoal Pedi', 'Spa', 3000, 45],
+        ['Gel Application', 'Spa', 1000, 30],
+        // Waxing
+        ['Waxing — Underarm', 'Waxing', 1000, 20],
+        ['Waxing — Bikini', 'Waxing', 2500, 30],
+        ['Waxing — Brazillian', 'Waxing', 3500, 40],
+        // Facial Scrubs
+        ['Facial Scrub — St.Ives', 'Facial Scrubs', 1500, 30],
+        ['Facial Scrub — Nivea', 'Facial Scrubs', 2000, 30],
+        ['Facial Scrub — Cinnabar', 'Facial Scrubs', 2500, 30],
+        ['Facial Scrub — Forever Products', 'Facial Scrubs', 3500, 35],
+        ['Facial Scrub — Mary Kay', 'Facial Scrubs', 3500, 35],
+        // Full Facial
+        ['Full Facial — St.Ives', 'Full Facial', 4000, 45],
+        ['Full Facial — Nivea', 'Full Facial', 4500, 45],
+        ['Full Facial — Cinnabar', 'Full Facial', 5000, 45],
+        ['Full Facial — Forever', 'Full Facial', 5500, 50],
+        ['Full Facial — Mary Kay', 'Full Facial', 5500, 50],
+        // Massages
+        ['Head & Shoulder Massage', 'Massages', 2000, 30],
+        ['Back Massage', 'Massages', 3000, 40],
+        ['Swedish Massage', 'Massages', 4500, 60],
+        ['Deep Tissue Massage', 'Massages', 5000, 60],
+        ['Body Scrub', 'Massages', 5000, 45],
+        ['Hot Stone Massage', 'Massages', 6000, 60],
+        ['Head Scrub', 'Massages', 1500, 20]
+      ];
+      for (const [name, category, price, duration] of CATALOG) {
+        await client.query(
+          `INSERT INTO services (shop_id, name, category, price, duration_mins) VALUES ($1,$2,$3,$4,$5)`,
+          [SHOP_ID, name, category, price, duration]
+        );
+      }
+      await client.query(`INSERT INTO migration_flags (key) VALUES ('services_catalog_poster_2026_09_01')`);
+      console.log(`[migrate] one-time: added ${CATALOG.length} services from the Men's Den price list.`);
+    }
+
+    // One-time: update the shop's contact number. Flag-guarded so it never
+    // overwrites a phone number changed later via Settings.
+    const phoneFlag = await client.query(
+      `SELECT 1 FROM migration_flags WHERE key = 'shop_phone_update_2026_09_01'`
+    );
+    if (!phoneFlag.rows.length) {
+      await client.query(
+        `UPDATE shops SET phone = '0722363333' WHERE id = '11111111-1111-1111-1111-111111111111'`
+      );
+      await client.query(`INSERT INTO migration_flags (key) VALUES ('shop_phone_update_2026_09_01')`);
+      console.log('[migrate] one-time: updated shop contact number to 0722363333.');
+    }
   } finally {
     client.release();
     await pool.end();

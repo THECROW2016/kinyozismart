@@ -82,6 +82,10 @@ Both are "service provider" staff — they get a row in the `barbers` table (spe
 
 Every Admin/Manager/Secretary login and logout is recorded (`login_sessions` table) with a timestamp for each. Both the Dashboard and the Staff page show a "Login History" panel — who logged in, their role, when, and when they logged out (or "still logged in" if the session is active). This is separate from barber/beautician shift clock-in/out (which is about attendance for commission purposes, not app access).
 
+### Services catalog
+
+Services now have a `category` field (Cuts, Dyes, Spa, Waxing, Facial Scrubs, Full Facial, Massages) matching the shop's printed price list. POS groups service selection by category, and the Settings price list is grouped the same way, with a category field (autocompleted from existing categories) when adding a new service. The full 46-item starter catalog is seeded once via `migrate.js` — additive only, never overwrites services added manually afterward.
+
 ### Expenses
 
 A dedicated Expenses page tracks rent, utilities, salaries, supplies, and other costs (category, description, amount, date), feeding into the profit report (`revenue − expenses − commissions`). Admin and Manager can add and delete expense entries.

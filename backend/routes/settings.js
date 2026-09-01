@@ -45,14 +45,14 @@ router.patch('/shop/:id', async (req, res) => {
 
 // POST /api/settings/services -> add a new service to the price list
 router.post('/services', async (req, res) => {
-  const { shop_id, name, price, duration_mins } = req.body;
+  const { shop_id, name, category, price, duration_mins } = req.body;
   if (!shop_id || !name || price === undefined) {
     return res.status(400).json({ error: 'shop_id, name, and price are required' });
   }
   try {
     const { rows } = await pool.query(
-      `INSERT INTO services (shop_id, name, price, duration_mins) VALUES ($1,$2,$3,$4) RETURNING *`,
-      [shop_id, name, price, duration_mins || 30]
+      `INSERT INTO services (shop_id, name, category, price, duration_mins) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [shop_id, name, category || null, price, duration_mins || 30]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -61,19 +61,20 @@ router.post('/services', async (req, res) => {
   }
 });
 
-// PATCH /api/settings/services/:id -> edit price / active state
+// PATCH /api/settings/services/:id -> edit price / active state / category
 router.patch('/services/:id', async (req, res) => {
   const { id } = req.params;
-  const { price, is_active, name, duration_mins } = req.body;
+  const { price, is_active, name, category, duration_mins } = req.body;
   try {
     const { rows } = await pool.query(
       `UPDATE services SET
          price = COALESCE($2, price),
          is_active = COALESCE($3, is_active),
          name = COALESCE($4, name),
-         duration_mins = COALESCE($5, duration_mins)
+         category = COALESCE($5, category),
+         duration_mins = COALESCE($6, duration_mins)
        WHERE id = $1 RETURNING *`,
-      [id, price, is_active, name, duration_mins]
+      [id, price, is_active, name, category, duration_mins]
     );
     if (!rows.length) return res.status(404).json({ error: 'Service not found' });
     res.json(rows[0]);

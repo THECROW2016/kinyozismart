@@ -48,13 +48,15 @@
   .save-msg{font-size:12px;color:var(--green);margin-left:12px;opacity:0;transition:opacity .2s;}
   .save-msg.show{opacity:1;}
 
+  .svc-category{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--amber);font-weight:700;margin-top:16px;padding-bottom:4px;}
+  .svc-category:first-child{margin-top:0;}
   .svc-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--ink-line);}
   .svc-row:last-child{border-bottom:none;}
   .svc-name{font-size:13.5px;font-weight:600;}
   .svc-duration{font-size:11.5px;color:var(--chalk-dim);}
   .svc-price-input{width:90px;padding:7px 10px;background:var(--ink);border:1px solid var(--ink-line);border-radius:6px;color:var(--amber);font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;}
 
-  .add-svc-row{display:flex;gap:8px;margin-top:14px;}
+  .add-svc-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
   .add-svc-row input{flex:1;padding:9px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-size:13px;}
   .add-svc-row button{background:var(--amber);border:none;color:var(--ink);font-weight:700;border-radius:8px;padding:9px 16px;font-size:12.5px;cursor:pointer;}
 
@@ -128,6 +130,8 @@
       <div class="card-title">Services &amp; Prices</div>
       <div id="servicesList">Loading…</div>
       <div class="add-svc-row">
+        <input id="newSvcCategory" placeholder="Category (e.g. Cuts)" list="categoryOptions" style="max-width:150px;">
+        <datalist id="categoryOptions"></datalist>
         <input id="newSvcName" placeholder="New service name">
         <input id="newSvcPrice" type="number" placeholder="Price (KSh)" style="max-width:120px;">
         <button onclick="addService()">Add</button>
@@ -192,14 +196,30 @@
   async function loadServices() {
     const res = await fetch(`${API_BASE}/services?shop_id=${SHOP_ID}`);
     const services = await res.json();
-    document.getElementById('servicesList').innerHTML = services.map(s => `
-      <div class="svc-row">
-        <div>
-          <div class="svc-name">${escapeHtml(s.name)}</div>
-          <div class="svc-duration">${s.duration_mins} min</div>
-        </div>
-        <input class="svc-price-input" value="${Number(s.price)}" onchange="updateServicePrice('${s.id}', this.value)">
-      </div>`).join('');
+
+    const groups = new Map();
+    for (const s of services) {
+      const cat = s.category || 'Other';
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat).push(s);
+    }
+
+    let html = '';
+    for (const [cat, list] of groups) {
+      html += `<div class="svc-category">${escapeHtml(cat)}</div>`;
+      html += list.map(s => `
+        <div class="svc-row">
+          <div>
+            <div class="svc-name">${escapeHtml(s.name)}</div>
+            <div class="svc-duration">${s.duration_mins} min</div>
+          </div>
+          <input class="svc-price-input" value="${Number(s.price)}" onchange="updateServicePrice('${s.id}', this.value)">
+        </div>`).join('');
+    }
+    document.getElementById('servicesList').innerHTML = html || '<div class="svc-row">No services yet.</div>';
+
+    document.getElementById('categoryOptions').innerHTML =
+      [...groups.keys()].map(c => `<option value="${escapeHtml(c)}">`).join('');
   }
 
   async function updateServicePrice(id, price) {
@@ -210,12 +230,15 @@
 
   async function addService() {
     const name = document.getElementById('newSvcName').value.trim();
+    const category = document.getElementById('newSvcCategory').value.trim();
     const price = Number(document.getElementById('newSvcPrice').value);
     if (!name || !price) return;
     await fetch(`${API_BASE}/settings/services`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ shop_id: SHOP_ID, name, price })
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop_id: SHOP_ID, name, category: category || null, price })
     });
     document.getElementById('newSvcName').value = '';
+    document.getElementById('newSvcCategory').value = '';
     document.getElementById('newSvcPrice').value = '';
     loadServices();
   }

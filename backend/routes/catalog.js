@@ -6,7 +6,9 @@ router.get('/services', async (req, res) => {
   const { shop_id } = req.query;
   if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
   const { rows } = await pool.query(
-    `SELECT id, name, price, duration_mins FROM services WHERE shop_id = $1 AND is_active = true ORDER BY name`,
+    `SELECT id, name, category, price, duration_mins FROM services
+     WHERE shop_id = $1 AND is_active = true
+     ORDER BY COALESCE(category, 'zzz'), name`,
     [shop_id]
   );
   res.json(rows);
