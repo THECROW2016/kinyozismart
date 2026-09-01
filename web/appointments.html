@@ -163,6 +163,9 @@
 
   function apptCardHTML(a) {
     const services = (a.services || []).filter(Boolean).join(' + ') || 'No services listed';
+    const deleteBtn = window.barberOSCanDelete
+      ? `<span class="appt-delete" title="Delete appointment" onclick="deleteAppointment('${a.id}')">🗑</span>`
+      : '';
     return `
       <div class="appt-card">
         <div class="appt-time-block">${fmtTime(a.scheduled_at)}</div>
@@ -172,7 +175,7 @@
           <div class="appt-barber">${a.barber_name ? 'with ' + escapeHtml(a.barber_name) : 'No barber assigned'}</div>
         </div>
         <span class="status-pill-sm ${a.status}">${a.status.replace('_',' ')}</span>
-        <span class="appt-delete" title="Delete appointment" onclick="deleteAppointment('${a.id}')">🗑</span>
+        ${deleteBtn}
       </div>`;
   }
 

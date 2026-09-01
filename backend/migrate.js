@@ -12,17 +12,15 @@ const pool = new Pool({
   ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false
 });
 
-// Initial PINs for the two seeded login accounts (Owner, Manager). Only used
-// to compute a hash below — the database never stores these plaintext, only
-// the scrypt hash (see utils/pin.js). Any account not listed here falls back
-// to '0000', but in practice that never applies: only owner/manager roles
-// ever get a pin_hash at all (see the corrective cleanup further down), and
-// both of those are listed here.
+// Initial PINs for the three login-capable seeded accounts (Owner, Manager,
+// Secretary). Only used to compute a hash below — the database never stores
+// these plaintext, only the scrypt hash (see utils/pin.js).
 // To change a PIN later, use backend/set-pin.js instead of editing these —
 // this backfill only fires once per account (when pin_hash is still NULL).
 const INITIAL_PINS = {
   '21111111-1111-1111-1111-111111111199': '4549', // Shop Owner (admin)
-  '21111111-1111-1111-1111-111111111198': '2891'  // Store Manager
+  '21111111-1111-1111-1111-111111111198': '2891', // Store Manager
+  '21111111-1111-1111-1111-111111111197': '7734'  // Front Desk Secretary
 };
 
 async function run() {
@@ -49,12 +47,17 @@ async function run() {
       console.log('[migrate] seed data applied.');
     }
 
+    // Add the new role values for databases created before secretary/beautician
+    // existed. ADD VALUE IF NOT EXISTS is safe to re-run every deploy.
+    await client.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'secretary'`);
+    await client.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'beautician'`);
+
     // Ensure pin_hash exists even on databases migrated before PIN login was added.
-    // Only owner/manager accounts log in — barbers/receptionists are intentionally
-    // created without a PIN, so they must never be swept up here.
+    // Only owner/manager/secretary accounts log in — barbers, beauticians, and
+    // receptionists are intentionally created without a PIN.
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_hash TEXT`);
     const { rows: needPin } = await client.query(
-      `SELECT id FROM users WHERE pin_hash IS NULL AND role IN ('owner', 'manager')`
+      `SELECT id FROM users WHERE pin_hash IS NULL AND role IN ('owner', 'manager', 'secretary')`
     );
     if (needPin.length) {
       console.log(`[migrate] assigning initial PINs to ${needPin.length} user(s)...`);
@@ -75,8 +78,7 @@ async function run() {
       console.log(`[migrate] renamed ${renamed.rows.length} shop(s) to Kinyozi Management System.`);
     }
 
-    // Ensure the Manager account exists, to exercise the manager-vs-owner
-    // role distinction (manager: operational + reports, no Settings/staff registration)
+    // Ensure the Manager account exists
     const MANAGER_ID = '21111111-1111-1111-1111-111111111198';
     const managerCheck = await client.query(`SELECT id FROM users WHERE id = $1`, [MANAGER_ID]);
     if (!managerCheck.rows.length) {
@@ -89,15 +91,28 @@ async function run() {
       console.log('[migrate] created Manager account.');
     }
 
-    // Receptionists are records-only and should never have a login PIN.
-    // (Barbers used to be swept up in this cleanup too, back when only
-    // owner/manager could log in — barbers now log in same as managers,
-    // so they're deliberately excluded here.)
+    // Ensure the Secretary account exists — inserts daily sale data, can't delete
+    const SECRETARY_ID = '21111111-1111-1111-1111-111111111197';
+    const secretaryCheck = await client.query(`SELECT id FROM users WHERE id = $1`, [SECRETARY_ID]);
+    if (!secretaryCheck.rows.length) {
+      await client.query(
+        `INSERT INTO users (id, shop_id, full_name, phone, password_hash, pin_hash, role)
+         VALUES ($1, '11111111-1111-1111-1111-111111111111', 'Front Desk Secretary', '0722000002', '', $2, 'secretary')
+         ON CONFLICT (id) DO NOTHING`,
+        [SECRETARY_ID, hashPin(INITIAL_PINS[SECRETARY_ID])]
+      );
+      console.log('[migrate] created Secretary account.');
+    }
+
+    // Receptionists, barbers, and beauticians are records-only and should
+    // never have a login PIN. (Barbers briefly logged in same as managers in
+    // an earlier version of this app — that's been reverted, so any PIN left
+    // over from that gets cleared here.)
     const cleared = await client.query(
-      `UPDATE users SET pin_hash = NULL WHERE role = 'receptionist' AND pin_hash IS NOT NULL RETURNING id`
+      `UPDATE users SET pin_hash = NULL WHERE role IN ('receptionist', 'barber', 'beautician') AND pin_hash IS NOT NULL RETURNING id`
     );
     if (cleared.rows.length) {
-      console.log(`[migrate] cleared incorrectly-assigned PINs from ${cleared.rows.length} receptionist account(s).`);
+      console.log(`[migrate] cleared incorrectly-assigned PINs from ${cleared.rows.length} non-login account(s).`);
     }
 
     // Ensure login_sessions exists even on databases migrated before this

@@ -47,14 +47,16 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/staff -> register a new staff member (barber, receptionist, or manager)
-// Manager and barber accounts log into the app (same access level), so a PIN
-// is required for those roles. Receptionists remain records-only, no login.
+// POST /api/staff -> register a new staff member (barber, beautician,
+// receptionist, manager, or secretary)
+// Manager and secretary accounts log into the app, so a PIN is required for
+// those roles. Barbers, beauticians, and receptionists remain records-only.
 // body: { shop_id, full_name, phone, role, pin?, photo_url?, specialties?: string[], commission_rate? }
 router.post('/', async (req, res) => {
   const { shop_id, full_name, phone, role, pin, photo_url, specialties, commission_rate } = req.body;
-  const allowedRoles = ['barber', 'receptionist', 'manager'];
-  const loginRoles = ['manager', 'barber'];
+  const allowedRoles = ['barber', 'beautician', 'receptionist', 'manager', 'secretary'];
+  const loginRoles = ['manager', 'secretary'];
+  const providerRoles = ['barber', 'beautician']; // get a row in the barbers table (performance/commission tracking)
   if (!shop_id || !full_name || !phone || !role) {
     return res.status(400).json({ error: 'shop_id, full_name, phone, and role are required' });
   }
@@ -62,7 +64,7 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: `role must be one of ${allowedRoles.join(', ')}` });
   }
   if (loginRoles.includes(role) && !/^\d{4}$/.test(String(pin))) {
-    return res.status(400).json({ error: 'A 4-digit login PIN is required for manager and barber accounts' });
+    return res.status(400).json({ error: 'A 4-digit login PIN is required for manager and secretary accounts' });
   }
 
   const client = await pool.connect();
@@ -75,7 +77,7 @@ router.post('/', async (req, res) => {
       [shop_id, full_name, phone, loginRoles.includes(role) ? hashPin(pin) : null, role, photo_url || null]
     );
 
-    if (role === 'barber') {
+    if (providerRoles.includes(role)) {
       await client.query(
         `INSERT INTO barbers (id, shop_id, specialties, commission_rate)
          VALUES ($1,$2,$3,$4)`,

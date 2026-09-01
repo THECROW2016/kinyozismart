@@ -9,16 +9,16 @@ const failedAttempts = new Map(); // user_id -> { count, lockedUntil }
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
 
-// GET /api/auth/staff?shop_id=...&group=admin|manager|barber
+// GET /api/auth/staff?shop_id=...&group=admin|manager|secretary
 // Three account types can log in: admin (owner — sees and manages
-// everything), manager, and barber (manager and barber share the same
-// access level — everything except Settings, which stays owner-only).
+// everything), manager (view + insert, everything except Settings), and
+// secretary (front-desk — insert daily sales/bookings, cannot delete).
 router.get('/staff', async (req, res) => {
   const { shop_id, group } = req.query;
   if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
 
-  const GROUP_ROLES = { admin: ['owner'], manager: ['manager'], barber: ['barber'] };
-  const roles = GROUP_ROLES[group] || ['owner', 'manager', 'barber'];
+  const GROUP_ROLES = { admin: ['owner'], manager: ['manager'], secretary: ['secretary'] };
+  const roles = GROUP_ROLES[group] || ['owner', 'manager', 'secretary'];
 
   try {
     const { rows } = await pool.query(
@@ -53,9 +53,10 @@ router.post('/login', async (req, res) => {
     if (!rows.length) return res.status(404).json({ error: 'User not found' });
 
     const user = rows[0];
-    // Owner, manager, and barber accounts can log in. Receptionists remain
-    // operational records only, even if a PIN somehow ended up set on one.
-    if (!['owner', 'manager', 'barber'].includes(user.role)) {
+    // Owner, manager, and secretary accounts can log in. Barbers, beauticians,
+    // and receptionists remain operational records only, even if a PIN
+    // somehow ended up set on one.
+    if (!['owner', 'manager', 'secretary'].includes(user.role)) {
       return res.status(403).json({ error: 'This account cannot log in to the app' });
     }
     if (!verifyPin(pin, user.pin_hash)) {

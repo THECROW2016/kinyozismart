@@ -4,7 +4,7 @@
 -- Multi-branch ready: every operational table carries shop_id
 -- ============================================================
 
-CREATE TYPE user_role AS ENUM ('owner', 'manager', 'receptionist', 'barber');
+CREATE TYPE user_role AS ENUM ('owner', 'manager', 'secretary', 'receptionist', 'barber', 'beautician');
 CREATE TYPE payment_method AS ENUM ('mpesa', 'cash', 'card', 'split');
 CREATE TYPE payment_status AS ENUM ('pending', 'confirmed', 'failed', 'refunded');
 CREATE TYPE appointment_status AS ENUM ('scheduled', 'confirmed', 'completed', 'cancelled', 'no_show');

@@ -117,7 +117,7 @@
   const API_BASE = window.location.origin + '/api';
   const params = new URLSearchParams(window.location.search);
   const group = params.get('group') || 'manager';
-  if (group === 'manager') {
+  if (group === 'manager' || group === 'secretary') {
     document.body.classList.add('manager-bg');
   }
   let selectedUser = null;
@@ -134,7 +134,7 @@
   function renderPicker(staff) {
     const panel = document.getElementById('panel');
     panel.innerHTML = `
-      <div class="group-title">${group === 'admin' ? 'ADMIN LOGIN' : group === 'barber' ? 'BARBER LOGIN' : 'MANAGER LOGIN'}</div>
+      <div class="group-title">${group === 'admin' ? 'ADMIN LOGIN' : group === 'secretary' ? 'SECRETARY LOGIN' : 'MANAGER LOGIN'}</div>
       <div class="group-sub">Tap your name to continue</div>
       <div class="staff-grid">
         ${staff.map(s => `
@@ -216,7 +216,7 @@
 
       data.loggedInAt = Date.now();
       localStorage.setItem('barberos_session', JSON.stringify(data));
-      window.location.href = 'dashboard.html';
+      window.location.href = data.role === 'secretary' ? 'pos.html' : 'dashboard.html';
     } catch (err) {
       errorMsg.textContent = err.message;
       const dotsEl = document.getElementById('pinDots');

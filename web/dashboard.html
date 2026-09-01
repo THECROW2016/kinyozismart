@@ -360,6 +360,28 @@
   .barber-name{font-weight:700;font-size:14.5px;}
   .barber-detail{font-size:12px;color:var(--chalk-dim);margin-top:2px;}
 
+  .leaderboard-row{
+    display:flex;align-items:center;gap:12px;
+    padding:9px 0;border-bottom:1px dashed var(--ink-line);
+  }
+  .leaderboard-row:last-child{border-bottom:none;}
+  .lb-rank{
+    width:20px;flex-shrink:0;text-align:center;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--chalk-dim);
+  }
+  .lb-rank.first{color:var(--amber);font-weight:700;}
+  .lb-avatar{
+    width:32px;height:32px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg, var(--barber-red), var(--amber));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--ink);
+  }
+  .lb-info{flex:1;min-width:0;}
+  .lb-name{font-size:13px;font-weight:600;}
+  .lb-role{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--chalk-dim);margin-left:6px;font-weight:500;}
+  .lb-detail{font-size:11px;color:var(--chalk-dim);margin-top:1px;}
+  .lb-revenue{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--amber);flex-shrink:0;text-align:right;}
+
   @media (max-width:860px){
     .app{grid-template-columns:60px 1fr;}
     main{padding:22px 16px 50px;}
@@ -461,14 +483,10 @@
 
         <div class="card">
           <div class="card-head">
-            <span class="card-title">Top-Performing Barber</span>
+            <span class="card-title">Staff Performance — Today</span>
           </div>
-          <div class="barber-card" id="topBarberCard">
-            <div class="barber-avatar">—</div>
-            <div>
-              <div class="barber-name">Loading…</div>
-              <div class="barber-detail"></div>
-            </div>
+          <div id="leaderboardList">
+            <div class="leaderboard-row"><span class="lb-name">Loading…</span></div>
           </div>
         </div>
 
@@ -552,18 +570,25 @@
       document.getElementById('statCustomers').textContent = data.customers_today;
       document.getElementById('statWaiting').textContent = data.queue_waiting;
 
-      // Top barber
-      const barberCard = document.getElementById('topBarberCard');
-      if (data.top_barber) {
-        const initials = data.top_barber.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-        barberCard.innerHTML = `
-          <div class="barber-avatar">${escapeHtml(initials)}</div>
-          <div>
-            <div class="barber-name">${escapeHtml(data.top_barber.full_name)}</div>
-            <div class="barber-detail">${data.top_barber.services_count} services · ${fmtKsh(data.top_barber.revenue)} today</div>
-          </div>`;
+      // Staff leaderboard — everyone (barbers & beauticians), ranked by today's revenue
+      const leaderboard = document.getElementById('leaderboardList');
+      if (data.staff_leaderboard && data.staff_leaderboard.length) {
+        leaderboard.innerHTML = data.staff_leaderboard.map((s, i) => {
+          const initials = s.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+          const rank = i + 1;
+          return `
+            <div class="leaderboard-row">
+              <span class="lb-rank ${rank === 1 ? 'first' : ''}">${rank}</span>
+              <div class="lb-avatar">${escapeHtml(initials)}</div>
+              <div class="lb-info">
+                <span class="lb-name">${escapeHtml(s.full_name)}<span class="lb-role">${escapeHtml(s.role)}</span></span>
+                <div class="lb-detail">${s.services_count} service${s.services_count === '1' ? '' : 's'} today</div>
+              </div>
+              <div class="lb-revenue">${fmtKsh(s.revenue)}</div>
+            </div>`;
+        }).join('');
       } else {
-        barberCard.innerHTML = `<div class="barber-detail">No sales recorded yet today.</div>`;
+        leaderboard.innerHTML = `<div class="leaderboard-row"><span class="lb-name">No barbers or beauticians registered yet.</span></div>`;
       }
 
       // Low stock
@@ -746,7 +771,7 @@
   if (window.barberOSSession) {
     const pill = document.getElementById('roleViewPill');
     const role = window.barberOSSession.role;
-    pill.textContent = role === 'owner' ? 'ADMIN VIEW' : role === 'barber' ? 'BARBER VIEW' : 'MANAGER VIEW';
+    pill.textContent = role === 'owner' ? 'ADMIN VIEW' : role === 'secretary' ? 'SECRETARY VIEW' : 'MANAGER VIEW';
     pill.style.display = 'inline-flex';
   }
 

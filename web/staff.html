@@ -188,8 +188,10 @@
       <label>Role</label>
       <select id="regRole" onchange="toggleBarberFields()">
         <option value="barber">Barber</option>
+        <option value="beautician">Beautician</option>
         <option value="receptionist">Receptionist</option>
         <option value="manager">Manager</option>
+        <option value="secretary">Secretary</option>
       </select>
     </div>
     <div id="barberFields">
@@ -197,7 +199,7 @@
       <div class="reg-field"><label>Commission rate (%)</label><input id="regCommission" type="number" value="40"></div>
     </div>
     <div class="reg-field" id="pinField"><label>4-digit login PIN</label><input id="regPin" maxlength="4" inputmode="numeric" placeholder="e.g. 6789"></div>
-    <div class="reg-field" id="pinNote" style="display:none;color:var(--chalk-dim);font-size:11.5px;margin-top:-8px;">Receptionists don't log into the app individually — no PIN needed.</div>
+    <div class="reg-field" id="pinNote" style="display:none;color:var(--chalk-dim);font-size:11.5px;margin-top:-8px;">This role doesn't log into the app individually — no PIN needed.</div>
 
     <div class="reg-actions">
       <button class="btn-cancel" onclick="closeRegModal()">Cancel</button>
@@ -220,12 +222,14 @@
   }
 
   function staffCardHTML(b) {
-    const isBarber = b.role === 'barber';
+    const isProvider = b.role === 'barber' || b.role === 'beautician';
     const safeName = b.full_name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    const deleteBtn = `<span class="staff-delete" title="Remove ${escapeHtml(b.full_name)}" onclick="deleteStaff('${b.id}','${safeName}')">🗑</span>`;
+    const deleteBtn = window.barberOSCanDelete
+      ? `<span class="staff-delete" title="Remove ${escapeHtml(b.full_name)}" onclick="deleteStaff('${b.id}','${safeName}')">🗑</span>`
+      : '';
 
-    if (!isBarber) {
-      // Simplified card for receptionists/managers — no commission/attendance data yet
+    if (!isProvider) {
+      // Simplified card for receptionists/managers/secretaries — no commission/attendance data
       return `
         <div class="staff-card">
           <div class="staff-top">
@@ -312,9 +316,9 @@
 
   function toggleBarberFields() {
     const role = document.getElementById('regRole').value;
-    const isBarber = role === 'barber';
-    const needsPin = role === 'manager' || isBarber;
-    document.getElementById('barberFields').style.display = isBarber ? 'block' : 'none';
+    const isProvider = role === 'barber' || role === 'beautician';
+    const needsPin = role === 'manager' || role === 'secretary';
+    document.getElementById('barberFields').style.display = isProvider ? 'block' : 'none';
     document.getElementById('pinField').style.display = needsPin ? 'block' : 'none';
     document.getElementById('pinNote').style.display = needsPin ? 'none' : 'block';
   }
@@ -342,12 +346,12 @@
     const errorEl = document.getElementById('regError');
 
     if (!full_name || !phone) { errorEl.textContent = 'Name and phone are required.'; return; }
-    const needsPin = role === 'manager' || role === 'barber';
+    const needsPin = role === 'manager' || role === 'secretary';
     if (needsPin && !/^\d{4}$/.test(pin)) { errorEl.textContent = 'PIN must be exactly 4 digits.'; return; }
 
     const body = { shop_id: SHOP_ID, full_name, phone, role, photo_url: selectedPhotoData };
     if (needsPin) body.pin = pin;
-    if (role === 'barber') {
+    if (role === 'barber' || role === 'beautician') {
       const specialties = document.getElementById('regSpecialties').value.split(',').map(s => s.trim()).filter(Boolean);
       body.specialties = specialties;
       body.commission_rate = Number(document.getElementById('regCommission').value) || 40;

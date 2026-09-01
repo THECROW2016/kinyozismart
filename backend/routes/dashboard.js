@@ -39,11 +39,14 @@ router.get('/summary', async (req, res) => {
       [shop_id]
     );
 
-    const topBarber = await pool.query(
-      `SELECT u.full_name, COUNT(s.id) AS services_count, COALESCE(SUM(s.total),0) AS revenue
-       FROM sales s JOIN users u ON u.id = s.barber_id
-       WHERE s.shop_id = $1 AND s.created_at::date = CURRENT_DATE
-       GROUP BY u.full_name ORDER BY revenue DESC LIMIT 1`,
+    const staffLeaderboard = await pool.query(
+      `SELECT u.id, u.full_name, u.role, COUNT(s.id) AS services_count, COALESCE(SUM(s.total),0) AS revenue
+       FROM barbers b
+       JOIN users u ON u.id = b.id
+       LEFT JOIN sales s ON s.barber_id = u.id AND s.shop_id = $1 AND s.created_at::date = CURRENT_DATE
+       WHERE b.shop_id = $1 AND u.is_active = true
+       GROUP BY u.id, u.full_name, u.role
+       ORDER BY revenue DESC, services_count DESC, u.full_name ASC`,
       [shop_id]
     );
 
@@ -67,7 +70,7 @@ router.get('/summary', async (req, res) => {
       customers_today: Number(customersToday.rows[0].count),
       queue_waiting: Number(queueWaiting.rows[0].count),
       low_stock: lowStock.rows,
-      top_barber: topBarber.rows[0] || null,
+      staff_leaderboard: staffLeaderboard.rows,
       sales_last_7_days: salesLast7Days.rows
     });
   } catch (err) {

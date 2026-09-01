@@ -58,28 +58,33 @@ PGHOST=localhost PGUSER=postgres PGPASSWORD=yourpassword PGDATABASE=barberos npm
 
 ### Login (PIN-based)
 
-The app opens on a landing page (`index.html`) with three entry points — **Admin Login**, **Manager Login**, and **Barber Login** — each leading to a PIN pad (`login.html?group=admin|manager|barber`). Pick your name, enter a 4-digit PIN.
+The app opens on a landing page (`index.html`) with three entry points — **Admin Login**, **Manager Login**, and **Secretary Login** — each leading to a PIN pad (`login.html?group=admin|manager|secretary`). Pick your name, enter a 4-digit PIN.
 
-Initial PINs for the two seeded accounts (Shop Owner, Store Manager) are set in `backend/migrate.js` (`INITIAL_PINS`) — read them there rather than here, so this doc can't go stale again like it just did. Barber PINs are set per-barber when they're registered from the Staff page. To change any PIN later, edit and run `backend/set-pin.js` against the target database rather than editing `migrate.js` (its backfill only fires once, when `pin_hash` is still unset).
+Initial PINs for the three seeded accounts (Shop Owner, Store Manager, Front Desk Secretary) are set in `backend/migrate.js` (`INITIAL_PINS`) — read them there rather than here, so this doc can't go stale again. To change any PIN later, edit and run `backend/set-pin.js` against the target database rather than editing `migrate.js` (its backfill only fires once, when `pin_hash` is still unset).
 
 Session is stored in the browser (`localStorage`) after login; every other page redirects to `login.html` if there's no session. PINs are hashed with Node's built-in `scrypt` (not bcrypt, to avoid a native dependency) — fine for a low-stakes PIN, not intended as enterprise-grade auth.
 
 ### Roles: three account types
 
 - **Admin (owner):** full visibility into everything the business does — every page, including Settings.
-- **Manager and Barber:** same access level — runs day-to-day operations, every page except Settings. Can add **and delete** Appointments, Staff, and Inventory. Deletes on Staff and Inventory are soft deletes (an `is_active` flag) so sales/commission history tied to them is never lost — they just drop off the active roster/catalog. Appointment deletes are permanent (nothing else depends on them). There's no delete capability anywhere else in the app.
+- **Manager:** view + insert everywhere except Settings — Dashboard, POS, Queue, Appointments, Customers, Staff, Inventory, Reports, Expenses. Can add **and delete** Appointments, Staff, and Inventory. Deletes on Staff and Inventory are soft deletes (an `is_active` flag) so sales/commission history tied to them is never lost — they just drop off the active roster/catalog. Appointment deletes are permanent (nothing else depends on them).
+- **Secretary:** front-desk only — POS, Queue, Appointments, Customers. Logs in straight to POS to record daily sales and bookings. Has **no delete access anywhere**, including on Appointments (the delete button simply doesn't render for this role) — matching their job of inserting daily data, not correcting or removing it.
 
-Receptionists are still real records (kept for completeness) but **don't log into the app**. When registering a receptionist from the Staff page, no PIN is requested; when registering a manager or barber, a PIN is required.
+Barbers, beauticians, and receptionists are real records (needed for POS attribution, commissions, and specialties) but **don't log into the app** — only Admin, Manager, and Secretary accounts do. When registering a barber/beautician/receptionist from the Staff page, no PIN is requested; when registering a manager or secretary, a PIN is required.
 
-This is enforced client-side in `auth-guard.js` (hides the Settings nav link + redirects on direct navigation for the Admin-only page) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
+This is enforced client-side in `auth-guard.js` (hides nav links + redirects on direct navigation to pages a role can't reach, and exposes a `window.barberOSCanDelete` flag pages check before rendering delete controls) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
+
+### Barbers & Beauticians
+
+Both are "service provider" staff — they get a row in the `barbers` table (specialties, commission rate, performance tracking) and show up together in the POS provider picker, the Staff page, and Reports. The Dashboard's **Staff Performance** panel ranks every barber and beautician by today's revenue, highest to lowest — not just a single "top performer."
 
 ### Login history
 
-Every Admin/Manager login and logout is recorded (`login_sessions` table) with a timestamp for each. The Staff page shows a "Login History" panel — who logged in, their role, when, and when they logged out (or "still logged in" if the session is active). This is separate from barber shift clock-in/out (which is about attendance for commission purposes, not app access).
+Every Admin/Manager/Secretary login and logout is recorded (`login_sessions` table) with a timestamp for each. Both the Dashboard and the Staff page show a "Login History" panel — who logged in, their role, when, and when they logged out (or "still logged in" if the session is active). This is separate from barber/beautician shift clock-in/out (which is about attendance for commission purposes, not app access).
 
 ### Expenses
 
-A dedicated Expenses page tracks rent, utilities, salaries, supplies, and other costs (category, description, amount, date), feeding into the profit report (`revenue − expenses − commissions`). Both Admin and Manager can add and delete expense entries.
+A dedicated Expenses page tracks rent, utilities, salaries, supplies, and other costs (category, description, amount, date), feeding into the profit report (`revenue − expenses − commissions`). Admin and Manager can add and delete expense entries.
 
 ### Security
 
@@ -94,7 +99,7 @@ None of this replaces the fact that PIN-based auth with no server-side session/J
 ### Look & feel
 
 - Sidebar icons are hand-drawn inline SVGs (no emoji) for a consistent, sleek look across every page.
-- The Manager Login screen (`login.html?group=manager`) uses a barbershop-themed photo as a background wallpaper; Admin Login stays on the plain dark theme.
+- The Manager Login and Secretary Login screens (`login.html?group=manager|secretary`) use a barbershop-themed photo as a background wallpaper; Admin Login stays on the plain dark theme.
 - Responsive breakpoints tuned for both small phones (≤480px: smaller sidebar, reduced padding/font sizes) and tablet/narrow-window sizes (≤860–960px depending on page: sidebar collapses to icon-only, multi-column layouts stack).
 - The Style Gallery feature has been removed.
 

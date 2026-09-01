@@ -18,10 +18,10 @@
   let session = null;
   try { session = JSON.parse(localStorage.getItem('barberos_session') || 'null'); } catch (e) { session = null; }
 
-  // Three account types can log in: owner, manager, barber. Any other role
-  // (e.g. a receptionist record that should never have had a login path) is
-  // rejected outright.
-  if (session && !['owner', 'manager', 'barber'].includes(session.role)) {
+  // Three account types can log in: owner, manager, secretary. Any other
+  // role (e.g. a barber/beautician/receptionist record that should never
+  // have had a login path) is rejected outright.
+  if (session && !['owner', 'manager', 'secretary'].includes(session.role)) {
     recordLogout(session.session_id);
     localStorage.removeItem('barberos_session');
     session = null;
@@ -41,6 +41,8 @@
   }
 
   window.barberOSSession = session;
+  // Secretary can insert daily data but never delete anything, anywhere.
+  window.barberOSCanDelete = !!session && session.role !== 'secretary';
 
   window.doLogout = function () {
     recordLogout(session && session.session_id);
@@ -48,17 +50,25 @@
     window.location.href = 'login.html';
   };
 
-  // Role-based access: three account types can log in.
+  // Role-based access:
   // owner (admin) = full visibility into everything the business does.
-  // manager and barber = same access level, everywhere except Settings
-  // (shop configuration / M-Pesa credentials stay admin-only).
+  // manager = view + insert everywhere except Settings (shop configuration
+  // / M-Pesa credentials stay admin-only).
+  // secretary = front-desk only — records daily sales/bookings, cannot see
+  // financial overview, staff management, inventory, or reports, and has no
+  // delete access anywhere.
   const PAGE_ACCESS = {
-    'settings.html': ['owner']
-    // every other page is open to owner, manager, and barber
+    'settings.html':     ['owner'],
+    'dashboard.html':    ['owner', 'manager'],
+    'staff.html':        ['owner', 'manager'],
+    'inventory.html':    ['owner', 'manager'],
+    'reports.html':      ['owner', 'manager'],
+    'expenses.html':     ['owner', 'manager']
+    // pos.html, queue.html, appointments.html, customers.html are open to all three
   };
 
   function homeFor(role) {
-    return 'dashboard.html';
+    return role === 'secretary' ? 'pos.html' : 'dashboard.html';
   }
 
   if (session && !isLoginPage && !isLanding) {
