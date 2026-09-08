@@ -149,6 +149,7 @@
         <div class="range-tab active" data-days="7">Last 7 days</div>
         <div class="range-tab" data-days="30">Last 30 days</div>
         <div class="range-tab" data-days="60">Last 60 days</div>
+        <div class="range-tab" data-days="month">This Month</div>
         <div class="range-tab" data-days="custom">Custom range</div>
       </div>
       <div class="export-controls" id="exportCustomRange" style="display:none;">
@@ -319,7 +320,7 @@
     tab.addEventListener('click', () => {
       document.querySelectorAll('#exportRangeTabs .range-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      exportRangeDays = tab.dataset.days === 'custom' ? 'custom' : Number(tab.dataset.days);
+      exportRangeDays = tab.dataset.days === 'custom' || tab.dataset.days === 'month' ? tab.dataset.days : Number(tab.dataset.days);
       document.getElementById('exportCustomRange').style.display = exportRangeDays === 'custom' ? 'flex' : 'none';
     });
   });
@@ -327,6 +328,12 @@
   function exportCurrentRange() {
     if (exportRangeDays === 'custom') {
       return { from: document.getElementById('exportFrom').value, to: document.getElementById('exportTo').value };
+    }
+    if (exportRangeDays === 'month') {
+      const now = new Date();
+      const first = new Date(now.getFullYear(), now.getMonth(), 1);
+      const today = new Date();
+      return { from: dateStr(first), to: dateStr(today) };
     }
     const to = new Date();
     const from = new Date();
@@ -473,6 +480,14 @@
   }
 
   loadReports();
+
+  // Arriving from the Dashboard's "Generate Monthly Report" button: select
+  // the This Month range and open the print dialog automatically.
+  if (new URLSearchParams(window.location.search).get('monthly') === '1') {
+    const monthTab = document.querySelector('#exportRangeTabs .range-tab[data-days="month"]');
+    if (monthTab) monthTab.click();
+    setTimeout(() => exportData('pdf'), 400);
+  }
 </script>
 </body>
 </html>

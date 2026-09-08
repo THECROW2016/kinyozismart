@@ -82,6 +82,10 @@ When the customer later gets a service, POS has a "Wallet" payment tab alongside
 
 The full top-up/payment history for each customer is visible in their detail drawer.
 
+### Staff Attendance & Monthly Report
+
+The Dashboard shows today's check-in/check-out status for every barber and beautician at a glance (reuses the same `attendance` data already recorded via the Clock In/Out buttons on the Staff page — no separate tracking to keep in sync). A "Generate Monthly Report" button on the Sales Calendar card jumps to Reports with the current calendar month pre-selected and immediately opens the print/PDF dialog — the report covers sales, expenses, commissions, and net profit for the month. Reports also has a "This Month" tab now for doing the same thing manually with a different month.
+
 ### Sales Calendar
 
 The Dashboard has a month-view calendar (below the main stats grid) showing each day's total sales and sale count at a glance — days with sales are highlighted, today is outlined, and clicking a day with sales shows the exact total and count. Prev/next buttons navigate between months. It reuses the existing `/api/reports/sales` daily-breakdown endpoint, so there's no separate data source to keep in sync.
