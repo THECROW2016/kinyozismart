@@ -16,6 +16,7 @@ const expensesRoutes = require('./routes/expenses');
 const reportsRoutes = require('./routes/reports');
 const settingsRoutes = require('./routes/settings');
 const authRoutes = require('./routes/auth');
+const walletRoutes = require('./routes/wallet');
 const pool = require('./db');
 
 const app = express();
@@ -74,6 +75,7 @@ app.use('/api/expenses', expensesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/wallet', walletRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {

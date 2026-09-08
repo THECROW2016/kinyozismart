@@ -11,7 +11,7 @@
     --ink:#1B1B1D; --ink-raised:#242426; --ink-line:#3A3936;
     --chalk:#F2ECDD; --chalk-dim:#B8B3A6;
     --barber-red:#C8352E; --barber-blue:#2C4A7C;
-    --amber:#E8A33D; --amber-dim:#8A6428;
+    --amber:#E8A33D; --amber-dim:#8A6428; --green:#4E9A63;
     --radius:14px;
   }
   *{box-sizing:border-box;}
@@ -80,6 +80,32 @@
   .drawer-stat .n{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;}
   .drawer-stat .l{font-size:10.5px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:.5px;}
   .visit-title{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--chalk-dim);font-weight:600;margin-bottom:10px;}
+
+  .wallet-card{background:rgba(232,163,61,.06);border:1px solid rgba(232,163,61,.25);border-radius:12px;padding:14px 16px;margin:16px 0;}
+  .wallet-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .wallet-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--chalk-dim);}
+  .wallet-amount{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:var(--amber);margin-top:2px;}
+  .btn-topup{background:var(--amber);color:var(--ink);border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+  .wallet-empty{font-size:11.5px;color:var(--chalk-dim);padding:6px 0;}
+  .wallet-tx-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px dashed rgba(232,163,61,.2);font-size:12px;}
+  .wallet-tx-row:first-child{border-top:none;}
+  .wallet-tx-type{font-weight:600;}
+  .wallet-tx-date{font-size:10.5px;color:var(--chalk-dim);margin-top:1px;}
+  .wallet-tx-amount{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+  .wallet-tx-amount.credit{color:var(--green);}
+  .wallet-tx-amount.debit{color:var(--barber-red);}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);align-items:center;justify-content:center;z-index:80;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:16px;padding:24px;width:340px;max-width:100%;}
+  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.5px;margin-bottom:16px;}
+  .modal-error{color:var(--barber-red);font-size:12px;min-height:16px;margin-bottom:6px;}
+  .modal label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--chalk-dim);display:block;margin-bottom:6px;}
+  .modal input{width:100%;margin-bottom:14px;padding:10px 12px;background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;color:var(--chalk);font-family:'Inter',sans-serif;font-size:13.5px;}
+  .modal-actions{display:flex;gap:8px;margin-top:6px;}
+  .modal-actions button{flex:1;padding:11px;border-radius:8px;cursor:pointer;font-size:13px;border:none;}
+  .btn-cancel{background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk-dim);}
+  .btn-confirm{background:var(--amber);color:var(--ink);font-weight:700;}
   .visit-row{padding:10px 0;border-bottom:1px dashed var(--ink-line);font-size:13px;}
   .visit-row:last-child{border-bottom:none;}
   .visit-top{display:flex;justify-content:space-between;font-weight:600;}
@@ -152,10 +178,26 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="topUpModal">
+  <div class="modal">
+    <div class="modal-title">Top Up Wallet</div>
+    <div class="modal-error" id="topUpError"></div>
+    <label>Amount received (KSh)</label>
+    <input id="topUpAmount" type="number" min="1" placeholder="e.g. 2000">
+    <label>Notes (optional)</label>
+    <input id="topUpNotes" placeholder="e.g. Cash deposit for future visits">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTopUpModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitTopUp()">Add to Wallet</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const SHOP_ID = '11111111-1111-1111-1111-111111111111';
   const API_BASE = window.location.origin + '/api';
   let allCustomers = [];
+  let currentDrawerCustomer = null;
 
   function fmtKsh(n) { return 'KSh ' + Number(n).toLocaleString(); }
   function initials(name) { return name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase(); }
@@ -194,6 +236,7 @@
     document.getElementById('drawerContent').innerHTML = 'Loading…';
     const res = await fetch(`${API_BASE}/customers/${id}`);
     const c = await res.json();
+    currentDrawerCustomer = c;
 
     const totalSpent = c.visits.reduce((sum, v) => sum + Number(v.total), 0);
     const visitsHTML = c.visits.length
@@ -217,9 +260,73 @@
         <div class="drawer-stat"><div class="n">${fmtKsh(totalSpent)}</div><div class="l">Lifetime Spend</div></div>
         <div class="drawer-stat"><div class="n">${c.loyalty_points}</div><div class="l">Loyalty Pts</div></div>
       </div>
+      <div class="wallet-card">
+        <div class="wallet-top">
+          <div>
+            <div class="wallet-label">Wallet Balance</div>
+            <div class="wallet-amount">${fmtKsh(c.wallet_balance)}</div>
+          </div>
+          <button class="btn-topup" onclick="openTopUpModal()">+ Top Up</button>
+        </div>
+        <div id="walletHistory">Loading wallet history…</div>
+      </div>
       <div class="visit-title">Visit History</div>
       ${visitsHTML}
     `;
+
+    loadWalletHistory(id);
+  }
+
+  async function loadWalletHistory(customerId) {
+    const res = await fetch(`${API_BASE}/wallet/${customerId}?shop_id=${SHOP_ID}`);
+    const data = await res.json();
+    const el = document.getElementById('walletHistory');
+    if (!el) return;
+    if (!data.history || !data.history.length) {
+      el.innerHTML = `<div class="wallet-empty">No wallet activity yet.</div>`;
+      return;
+    }
+    el.innerHTML = data.history.map(h => {
+      const isCredit = Number(h.amount) > 0;
+      const label = h.type === 'topup' ? 'Top-up' : h.type === 'payment' ? 'Used for service' : h.type === 'refund' ? 'Refund' : 'Adjustment';
+      return `
+        <div class="wallet-tx-row">
+          <div>
+            <div class="wallet-tx-type">${label}</div>
+            <div class="wallet-tx-date">${new Date(h.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' })}${h.created_by_name ? ' · ' + escapeHtml(h.created_by_name) : ''}</div>
+          </div>
+          <div class="wallet-tx-amount ${isCredit ? 'credit' : 'debit'}">${isCredit ? '+' : ''}${fmtKsh(h.amount)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function openTopUpModal() {
+    document.getElementById('topUpAmount').value = '';
+    document.getElementById('topUpNotes').value = '';
+    document.getElementById('topUpError').textContent = '';
+    document.getElementById('topUpModal').classList.add('open');
+  }
+  function closeTopUpModal() { document.getElementById('topUpModal').classList.remove('open'); }
+
+  async function submitTopUp() {
+    const amount = Number(document.getElementById('topUpAmount').value);
+    const notes = document.getElementById('topUpNotes').value.trim();
+    const errorEl = document.getElementById('topUpError');
+    if (!amount || amount <= 0) { errorEl.textContent = 'Enter a valid amount.'; return; }
+    if (!currentDrawerCustomer) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/wallet/${currentDrawerCustomer.id}/topup`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shop_id: SHOP_ID, amount, notes: notes || undefined, created_by: (window.barberOSSession && window.barberOSSession.id) || undefined })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Top-up failed');
+      closeTopUpModal();
+      openDrawer(currentDrawerCustomer.id); // refresh drawer with new balance
+    } catch (err) {
+      errorEl.textContent = err.message;
+    }
   }
 
   function closeDrawer(e) {

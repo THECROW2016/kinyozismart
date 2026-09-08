@@ -5,7 +5,7 @@
 -- ============================================================
 
 CREATE TYPE user_role AS ENUM ('owner', 'manager', 'secretary', 'receptionist', 'barber', 'beautician');
-CREATE TYPE payment_method AS ENUM ('mpesa', 'cash', 'card', 'split');
+CREATE TYPE payment_method AS ENUM ('mpesa', 'cash', 'card', 'split', 'wallet');
 CREATE TYPE payment_status AS ENUM ('pending', 'confirmed', 'failed', 'refunded');
 CREATE TYPE appointment_status AS ENUM ('scheduled', 'confirmed', 'completed', 'cancelled', 'no_show');
 CREATE TYPE queue_status AS ENUM ('waiting', 'called', 'in_service', 'completed', 'left');
@@ -107,8 +107,29 @@ CREATE TABLE customers (
   phone          TEXT,
   photo_url      TEXT,
   loyalty_points INTEGER NOT NULL DEFAULT 0,
+  wallet_balance NUMERIC(10,2) NOT NULL DEFAULT 0,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (shop_id, phone)
+);
+
+-- ------------------------------------------------------------
+-- Customer wallet: prepaid credit. Topping up is NOT revenue (it's a
+-- liability — cash held on the customer's behalf until they redeem it for
+-- an actual service). Redeeming wallet balance to pay for a sale IS revenue,
+-- recorded as a normal sale with payment method 'wallet', and logged here
+-- as a negative entry against the same balance.
+-- ------------------------------------------------------------
+CREATE TABLE wallet_transactions (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id   UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  shop_id       UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  type          TEXT NOT NULL CHECK (type IN ('topup', 'payment', 'refund', 'adjustment')),
+  amount        NUMERIC(10,2) NOT NULL, -- positive for topup/refund, negative for payment/deduction
+  balance_after NUMERIC(10,2) NOT NULL,
+  sale_id       UUID, -- FK added below, once the sales table exists
+  notes         TEXT,
+  created_by    UUID REFERENCES users(id),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE loyalty_transactions (
@@ -237,6 +258,7 @@ CREATE TABLE sales (
 
 ALTER TABLE queue_entries ADD CONSTRAINT fk_queue_sale FOREIGN KEY (sale_id) REFERENCES sales(id);
 ALTER TABLE loyalty_transactions ADD CONSTRAINT fk_loyalty_sale FOREIGN KEY (sale_id) REFERENCES sales(id);
+ALTER TABLE wallet_transactions ADD CONSTRAINT fk_wallet_sale FOREIGN KEY (sale_id) REFERENCES sales(id);
 
 CREATE TABLE sale_line_items (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -311,6 +333,7 @@ CREATE INDEX idx_customers_shop_phone ON customers(shop_id, phone);
 CREATE INDEX idx_products_shop_stock ON products(shop_id, stock_quantity);
 CREATE INDEX idx_commissions_barber_paid ON commissions(barber_id, is_paid_out);
 CREATE INDEX idx_login_sessions_shop_login ON login_sessions(shop_id, login_at DESC);
+CREATE INDEX idx_wallet_transactions_customer ON wallet_transactions(customer_id, created_at DESC);
 
 -- ------------------------------------------------------------
 -- Example: daily queue number reset (application-level logic)

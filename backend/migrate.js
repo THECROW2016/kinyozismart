@@ -130,6 +130,28 @@ async function run() {
       CREATE INDEX IF NOT EXISTS idx_login_sessions_shop_login ON login_sessions(shop_id, login_at DESC)
     `);
 
+    // Ensure customer wallets exist even on databases migrated before this
+    // prepaid-credit feature was added.
+    await client.query(`ALTER TABLE customers ADD COLUMN IF NOT EXISTS wallet_balance NUMERIC(10,2) NOT NULL DEFAULT 0`);
+    await client.query(`ALTER TYPE payment_method ADD VALUE IF NOT EXISTS 'wallet'`);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS wallet_transactions (
+        id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        customer_id   UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        shop_id       UUID NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+        type          TEXT NOT NULL CHECK (type IN ('topup', 'payment', 'refund', 'adjustment')),
+        amount        NUMERIC(10,2) NOT NULL,
+        balance_after NUMERIC(10,2) NOT NULL,
+        sale_id       UUID REFERENCES sales(id),
+        notes         TEXT,
+        created_by    UUID REFERENCES users(id),
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_wallet_transactions_customer ON wallet_transactions(customer_id, created_at DESC)
+    `);
+
     // One-time reset, requested by the shop owner, to clear out old/test
     // appointment data and start fresh. Guarded by a flag so it only ever
     // runs once, regardless of how many future deploys happen.

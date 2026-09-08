@@ -10,7 +10,7 @@
   :root{
     --ink:#1B1B1D; --ink-raised:#242426; --ink-line:#3A3936;
     --chalk:#F2ECDD; --chalk-dim:#B8B3A6;
-    --barber-red:#C8352E; --barber-blue:#2C4A7C;
+    --barber-red:#C8352E; --barber-blue:#2C4A7C; --green:#4E9A63;
     --amber:#E8A33D; --amber-dim:#8A6428;
     --radius:14px;
   }
@@ -256,7 +256,9 @@
           <div class="pay-tab active" data-method="mpesa">M-Pesa</div>
           <div class="pay-tab" data-method="cash">Cash</div>
           <div class="pay-tab" data-method="card">Card</div>
+          <div class="pay-tab" data-method="wallet">Wallet</div>
         </div>
+        <div id="walletBalanceNote" style="display:none;font-size:11.5px;margin:-10px 0 12px;"></div>
 
         <hr class="divider">
         <div class="total-line">
@@ -365,9 +367,9 @@
 
     const customerSelect = document.getElementById('customerSelect');
     customerSelect.innerHTML += customers.map(c =>
-      `<option value="${c.id}" data-name="${escapeHtml(c.full_name)}" data-points="${c.loyalty_points}">${escapeHtml(c.full_name)} · ${escapeHtml(c.phone || 'no phone')}</option>`
+      `<option value="${c.id}" data-name="${escapeHtml(c.full_name)}" data-points="${c.loyalty_points}" data-wallet="${c.wallet_balance}">${escapeHtml(c.full_name)} · ${escapeHtml(c.phone || 'no phone')}</option>`
     ).join('');
-    customerSelect.addEventListener('change', updateCustomerPreview);
+    customerSelect.addEventListener('change', () => { updateCustomerPreview(); updateWalletNote(); });
 
     updateSummary();
   }
@@ -424,6 +426,33 @@
     const discountPct = Number(document.getElementById('discountInput').value) || 0;
     const total = Math.max(subtotal - subtotal * (discountPct / 100), 0);
     document.getElementById('totalVal').textContent = fmtKsh(total);
+    updateWalletNote();
+  }
+
+  function updateWalletNote() {
+    const note = document.getElementById('walletBalanceNote');
+    if (selectedMethod !== 'wallet') { note.style.display = 'none'; return; }
+
+    const custOpt = document.getElementById('customerSelect').selectedOptions[0];
+    const total = services.filter(s => selectedServiceIds.has(s.id)).reduce((sum, s) => sum + Number(s.price), 0)
+      + products.reduce((sum, p) => sum + (productQty[p.id] || 0) * Number(p.sell_price), 0);
+    const discountPct = Number(document.getElementById('discountInput').value) || 0;
+    const dueTotal = Math.max(total - total * (discountPct / 100), 0);
+
+    note.style.display = 'block';
+    if (!custOpt || !custOpt.value) {
+      note.style.color = 'var(--barber-red)';
+      note.textContent = 'Wallet payment requires a customer to be selected.';
+      return;
+    }
+    const balance = Number(custOpt.dataset.wallet || 0);
+    if (balance < dueTotal) {
+      note.style.color = 'var(--barber-red)';
+      note.textContent = `Insufficient wallet balance: ${fmtKsh(balance)} available, ${fmtKsh(dueTotal)} needed.`;
+    } else {
+      note.style.color = 'var(--green)';
+      note.textContent = `Wallet balance: ${fmtKsh(balance)} — ${fmtKsh(balance - dueTotal)} left after this sale.`;
+    }
   }
 
   document.getElementById('discountInput').addEventListener('input', updateSummary);
@@ -433,6 +462,7 @@
       document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       selectedMethod = tab.dataset.method;
+      updateWalletNote();
     });
   });
 
@@ -449,6 +479,24 @@
       msgEl.textContent = 'Select a barber and at least one service or product.';
       msgEl.style.color = 'var(--barber-red)';
       return;
+    }
+
+    if (selectedMethod === 'wallet') {
+      const custOpt = document.getElementById('customerSelect').selectedOptions[0];
+      if (!custOpt || !custOpt.value) {
+        msgEl.textContent = 'Wallet payment requires a customer to be selected.';
+        msgEl.style.color = 'var(--barber-red)';
+        return;
+      }
+      const preSubtotal = selectedServices.reduce((s, x) => s + Number(x.price), 0)
+        + selectedProducts.reduce((s, x) => s + Number(x.price) * Number(x.quantity), 0);
+      const preTotal = Math.max(preSubtotal - preSubtotal * (discountPct / 100), 0);
+      const balance = Number(custOpt.dataset.wallet || 0);
+      if (balance < preTotal) {
+        msgEl.textContent = `Insufficient wallet balance: ${fmtKsh(balance)} available, ${fmtKsh(preTotal)} needed.`;
+        msgEl.style.color = 'var(--barber-red)';
+        return;
+      }
     }
 
     msgEl.textContent = 'Processing…';

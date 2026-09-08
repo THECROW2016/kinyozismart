@@ -74,6 +74,14 @@ Barbers, beauticians, and receptionists are real records (needed for POS attribu
 
 This is enforced client-side in `auth-guard.js` (hides nav links + redirects on direct navigation to pages a role can't reach, and exposes a `window.barberOSCanDelete` flag pages check before rendering delete controls) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
 
+### Customer Wallet (prepaid credit)
+
+Customers can pre-pay cash now and use it for services later. From a customer's detail drawer on the Customers page, staff can "Top Up" their wallet — this is recorded as a `wallet_transactions` entry and increases `customers.wallet_balance`, but is **deliberately not counted as sales revenue**, since no service has been delivered yet (it's a liability, not income).
+
+When the customer later gets a service, POS has a "Wallet" payment tab alongside M-Pesa/Cash/Card. Selecting it shows their current balance and warns if it's insufficient or if no customer is selected. On checkout, the balance check and deduction happen atomically in the same database transaction as the sale itself — if the balance is insufficient, the whole sale is rejected and nothing is partially recorded. A wallet-paid sale **is** counted as normal revenue (it shows up in Dashboard, Reports, commissions — everything — exactly like a cash or M-Pesa sale), since the service was actually delivered; only the payment method differs.
+
+The full top-up/payment history for each customer is visible in their detail drawer.
+
 ### Sales Calendar
 
 The Dashboard has a month-view calendar (below the main stats grid) showing each day's total sales and sale count at a glance — days with sales are highlighted, today is outlined, and clicking a day with sales shows the exact total and count. Prev/next buttons navigate between months. It reuses the existing `/api/reports/sales` daily-breakdown endpoint, so there's no separate data source to keep in sync.

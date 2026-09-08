@@ -41,7 +41,7 @@ router.get('/customers', async (req, res) => {
   const { shop_id, search } = req.query;
   if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
   const params = [shop_id];
-  let sql = `SELECT id, full_name, phone, loyalty_points FROM customers WHERE shop_id = $1`;
+  let sql = `SELECT id, full_name, phone, loyalty_points, wallet_balance FROM customers WHERE shop_id = $1`;
   if (search) {
     params.push(`%${search}%`);
     sql += ` AND (full_name ILIKE $2 OR phone ILIKE $2)`;
@@ -53,7 +53,7 @@ router.get('/customers', async (req, res) => {
 
 router.get('/customers/:id', async (req, res) => {
   const { id } = req.params;
-  const customer = await pool.query(`SELECT id, full_name, phone, loyalty_points, created_at FROM customers WHERE id = $1`, [id]);
+  const customer = await pool.query(`SELECT id, full_name, phone, loyalty_points, wallet_balance, created_at FROM customers WHERE id = $1`, [id]);
   if (!customer.rows.length) return res.status(404).json({ error: 'Customer not found' });
 
   const visits = await pool.query(

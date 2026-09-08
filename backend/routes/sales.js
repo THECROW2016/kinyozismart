@@ -63,6 +63,36 @@ router.post('/', async (req, res) => {
       );
     }
 
+    // Wallet payments draw down a customer's prepaid balance instead of
+    // taking new cash/mpesa/card — verify and deduct atomically here so a
+    // customer can never be charged more than they've actually deposited.
+    if (payment.method === 'wallet') {
+      if (!customer_id) {
+        throw Object.assign(new Error('Wallet payment requires a customer to be selected'), { statusCode: 400 });
+      }
+      const custRow = await client.query(
+        `SELECT wallet_balance FROM customers WHERE id = $1 AND shop_id = $2 FOR UPDATE`,
+        [customer_id, shop_id]
+      );
+      if (!custRow.rows.length) {
+        throw Object.assign(new Error('Customer not found'), { statusCode: 404 });
+      }
+      const currentBalance = Number(custRow.rows[0].wallet_balance);
+      if (currentBalance < Number(payment.amount)) {
+        throw Object.assign(
+          new Error(`Insufficient wallet balance: has KSh ${currentBalance.toLocaleString()}, needs KSh ${Number(payment.amount).toLocaleString()}`),
+          { statusCode: 400 }
+        );
+      }
+      const newBalance = currentBalance - Number(payment.amount);
+      await client.query(`UPDATE customers SET wallet_balance = $1 WHERE id = $2`, [newBalance, customer_id]);
+      await client.query(
+        `INSERT INTO wallet_transactions (customer_id, shop_id, type, amount, balance_after, sale_id, created_by)
+         VALUES ($1,$2,'payment',$3,$4,$5,$6)`,
+        [customer_id, shop_id, -Number(payment.amount), newBalance, saleId, created_by]
+      );
+    }
+
     await client.query(
       `INSERT INTO sale_payments (sale_id, method, amount, status, confirmed_at)
        VALUES ($1,$2,$3,'confirmed', now())`,
@@ -106,6 +136,9 @@ router.post('/', async (req, res) => {
     res.status(201).json({ id: saleId, subtotal, discount_amount: discountAmount, total });
   } catch (err) {
     await client.query('ROLLBACK');
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     console.error(err);
     res.status(500).json({ error: 'Failed to record sale', detail: err.message });
   } finally {
