@@ -198,4 +198,38 @@ router.get('/export', async (req, res) => {
   }
 });
 
+// GET /api/reports/attendance?shop_id=&from=&to=
+// Check-in/check-out records for every barber/beautician in the range, plus
+// hours worked per record and a per-staff total for the period.
+router.get('/attendance', async (req, res) => {
+  const { shop_id } = req.query;
+  if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
+  const { from, to } = dateRange(req);
+
+  try {
+    const records = await pool.query(
+      `SELECT u.full_name, u.role, a.clock_in, a.clock_out,
+              EXTRACT(EPOCH FROM (COALESCE(a.clock_out, now()) - a.clock_in)) / 3600 AS hours
+       FROM attendance a
+       JOIN users u ON u.id = a.barber_id
+       WHERE a.shop_id = $1 AND a.clock_in::date BETWEEN $2 AND $3
+       ORDER BY a.clock_in ASC`,
+      [shop_id, from, to]
+    );
+
+    const totalsMap = {};
+    for (const r of records.rows) {
+      const key = r.full_name;
+      totalsMap[key] = (totalsMap[key] || 0) + Number(r.hours);
+    }
+    const totals = Object.entries(totalsMap).map(([full_name, hours]) => ({ full_name, hours }))
+      .sort((a, b) => b.hours - a.hours);
+
+    res.json({ from, to, records: records.rows, totals });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to build attendance report', detail: err.message });
+  }
+});
+
 module.exports = router;

@@ -67,7 +67,7 @@
   .print-report{display:none;}
   @media print{
     body > .app{display:none !important;}
-    .print-report{
+    .print-report.active{
       display:block !important;background:#fff;color:#111;font-family:'Inter',Arial,sans-serif;
     }
     .pr-shop{font-family:'Bebas Neue',sans-serif;font-size:26px;}
@@ -204,6 +204,16 @@
     <table class="pr-table" id="prCommissionsTable"></table>
   </div>
   <div class="pr-section pr-summary" id="prSummary"></div>
+</div>
+
+<div class="print-report" id="printAttendanceReport">
+  <div class="pr-shop">Kinyozi Management System</div>
+  <div class="pr-range" id="prAttRange"></div>
+  <div class="pr-section">
+    <div class="pr-title">Check-In / Check-Out Records</div>
+    <table class="pr-table" id="prAttendanceTable"></table>
+  </div>
+  <div class="pr-section pr-summary" id="prAttTotals"></div>
 </div>
 
 <script>
@@ -460,6 +470,8 @@
   }
 
   function renderPrintableReport(data) {
+    document.getElementById('printAttendanceReport').classList.remove('active');
+    document.getElementById('printReport').classList.add('active');
     document.getElementById('prRange').textContent = `Report: ${data.from} to ${data.to}`;
 
     const salesRows = data.sales.map(r => `<tr>
@@ -505,10 +517,66 @@
     `;
   }
 
-  async function exportData(format) {
+  async function fetchAttendanceData() {
+    const { from, to } = exportCurrentRange();
+    if (!from || !to) throw new Error('Pick both a start and end date.');
+    if (from > to) throw new Error('Start date must be before end date.');
+    const res = await fetch(`${API_BASE}/reports/attendance?shop_id=${SHOP_ID}&from=${from}&to=${to}`);
+    if (!res.ok) throw new Error('Failed to load attendance data.');
+    return res.json();
+  }
+
+  function fmtHours(h) { return Number(h).toFixed(1) + ' hrs'; }
+
+  function downloadAttendanceCsv(data) {
+    const range = `${data.from}_to_${data.to}`;
+    downloadBlob(toCsv(data.records, [
+      { label: 'Staff', get: r => r.full_name },
+      { label: 'Role', get: r => r.role },
+      { label: 'Date', get: r => String(r.clock_in).slice(0, 10) },
+      { label: 'Check-In', get: r => fmtDateTime(r.clock_in) },
+      { label: 'Check-Out', get: r => r.clock_out ? fmtDateTime(r.clock_out) : 'Still checked in' },
+      { label: 'Hours', get: r => Number(r.hours).toFixed(1) }
+    ]), `attendance_${range}.csv`, 'text/csv;charset=utf-8');
+  }
+
+  function renderAttendanceReport(data) {
+    document.getElementById('printReport').classList.remove('active');
+    document.getElementById('printAttendanceReport').classList.add('active');
+    document.getElementById('prAttRange').textContent = `Attendance Report: ${data.from} to ${data.to}`;
+
+    const rows = data.records.map(r => `<tr>
+      <td>${escapeHtml(r.full_name)}</td>
+      <td>${escapeHtml(r.role)}</td>
+      <td>${escapeHtml(String(r.clock_in).slice(0, 10))}</td>
+      <td>${escapeHtml(fmtDateTime(r.clock_in))}</td>
+      <td>${r.clock_out ? escapeHtml(fmtDateTime(r.clock_out)) : 'Still checked in'}</td>
+      <td>${fmtHours(r.hours)}</td>
+    </tr>`).join('') || '<tr><td colspan="6">No check-ins recorded in this range.</td></tr>';
+    document.getElementById('prAttendanceTable').innerHTML =
+      `<thead><tr><th>Staff</th><th>Role</th><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Hours</th></tr></thead><tbody>${rows}</tbody>`;
+
+    document.getElementById('prAttTotals').innerHTML = data.totals.length
+      ? `<div class="pr-title">Total Hours (by staff)</div>` + data.totals.map(t => `<div>${escapeHtml(t.full_name)}: ${fmtHours(t.hours)}</div>`).join('')
+      : '';
+  }
+
+  async function exportData(format, type) {
     const msg = document.getElementById('exportMsg');
     msg.textContent = 'Preparing export…';
     try {
+      if (type === 'attendance') {
+        const data = await fetchAttendanceData();
+        if (format === 'csv') {
+          downloadAttendanceCsv(data);
+          msg.textContent = `Downloaded attendance CSV for ${data.from} to ${data.to}.`;
+        } else {
+          renderAttendanceReport(data);
+          msg.textContent = 'Attendance report ready.';
+          window.print();
+        }
+        return;
+      }
       const data = await fetchExportData();
       if (format === 'csv') {
         downloadExportCsvs(data);
@@ -536,10 +604,14 @@
 
   // Arriving from the Dashboard's "Generate Monthly Report" button: select
   // the This Month range and open the print dialog automatically.
-  if (new URLSearchParams(window.location.search).get('monthly') === '1') {
+  // type=attendance means only check-in/check-out data — the financial
+  // export (type absent or anything else) still works exactly as before.
+  const monthlyParams = new URLSearchParams(window.location.search);
+  if (monthlyParams.get('monthly') === '1') {
+    const reportType = monthlyParams.get('type') === 'attendance' ? 'attendance' : 'financial';
     const monthTab = document.querySelector('#exportRangeTabs .range-tab[data-days="month"]');
     if (monthTab) monthTab.click();
-    setTimeout(() => exportData('pdf'), 400);
+    setTimeout(() => exportData('pdf', reportType), 400);
   }
 </script>
 </body>

@@ -84,9 +84,11 @@ The wallet is always charged the server's own computed total (from the actual se
 
 The full top-up/payment history for each customer is visible in their detail drawer.
 
-### Staff Attendance & Monthly Report
+### Staff Attendance & Monthly Attendance Report
 
-The Dashboard shows today's check-in/check-out status for every barber and beautician at a glance (reuses the same `attendance` data already recorded via the Clock In/Out buttons on the Staff page — no separate tracking to keep in sync). A "Generate Monthly Report" button on the Sales Calendar card jumps to Reports with the current calendar month pre-selected and immediately opens the print/PDF dialog — the report covers sales, expenses, commissions, and net profit for the month. Reports also has a "This Month" tab now for doing the same thing manually with a different month.
+The Dashboard shows today's check-in/check-out status for every barber and beautician at a glance (reuses the same `attendance` data already recorded via the Clock In/Out buttons on the Staff page — no separate tracking to keep in sync). The "Generate Monthly Attendance Report" button, on that same card, jumps to Reports with the current calendar month pre-selected and immediately opens the print/PDF dialog for a check-in/check-out report only — staff name, role, date, check-in, check-out, and hours worked per shift, plus a total-hours-per-staff summary. It does not include sales, expenses, or commissions.
+
+The general financial report (sales/expenses/commissions/profit) is still available from the Reports page itself via the Export Data section's "This Month" tab (or any other range) — that one is untouched, just no longer what the Dashboard shortcut produces.
 
 ### Sales Calendar
 
