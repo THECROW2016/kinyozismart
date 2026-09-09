@@ -74,6 +74,12 @@ Barbers, beauticians, and receptionists are real records (needed for POS attribu
 
 This is enforced client-side in `auth-guard.js` (hides nav links + redirects on direct navigation to pages a role can't reach, and exposes a `window.barberOSCanDelete` flag pages check before rendering delete controls) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
 
+### Transactions (Owner-only add/delete)
+
+The Reports page has a "Transactions" list showing every individual sale for the currently selected range, alongside the existing aggregate reports. Only the Admin (owner) sees a delete button on each one — Manager and Secretary can view the list but not remove entries. Adding a transaction is just a normal sale through POS, available to whichever roles already have POS access (Owner, Manager, Secretary).
+
+Deleting a transaction fully reverses everything it caused, not just the sale record: product stock is restored, any wallet payment is refunded back to the customer's balance, any loyalty points it earned are taken back, and if it closed out a queue entry, that entry is detached (not deleted) from the now-voided sale. All of this happens in a single database transaction — either the sale and every one of its consequences are undone together, or the delete fails and nothing changes.
+
 ### Customer Wallet (prepaid credit)
 
 Customers can pre-pay cash now and use it for services later. From a customer's detail drawer on the Customers page, staff can "Top Up" their wallet — this is recorded as a `wallet_transactions` entry and increases `customers.wallet_balance`, but is **deliberately not counted as sales revenue**, since no service has been delivered yet (it's a liability, not income).

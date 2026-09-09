@@ -51,6 +51,27 @@
   .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;}
   .card{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:20px 22px;margin-bottom:18px;}
   .card-title{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;color:var(--chalk-dim);font-weight:600;margin-bottom:14px;}
+  .card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+  .card-head .card-title{margin-bottom:0;}
+  .card-sub{font-size:11.5px;color:var(--chalk-dim);}
+
+  .txn-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed var(--ink-line);font-size:12.5px;}
+  .txn-row:last-child{border-bottom:none;}
+  .txn-main{flex:1;min-width:0;}
+  .txn-top{font-weight:600;}
+  .txn-meta{font-size:11px;color:var(--chalk-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .txn-amount{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--amber);flex-shrink:0;}
+  .txn-delete{cursor:pointer;color:var(--chalk-dim);font-size:14px;padding:6px;border-radius:6px;flex-shrink:0;}
+  .txn-delete:hover{color:var(--barber-red);background:rgba(200,53,46,.12);}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);align-items:center;justify-content:center;z-index:80;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:16px;padding:24px;width:380px;max-width:100%;}
+  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.5px;margin-bottom:14px;}
+  .modal-actions{display:flex;gap:8px;margin-top:6px;}
+  .modal-actions button{flex:1;padding:11px;border-radius:8px;cursor:pointer;font-size:13px;border:none;}
+  .btn-cancel{background:var(--ink);border:1px solid var(--ink-line);color:var(--chalk-dim);}
+  .btn-confirm{background:var(--amber);color:var(--ink);font-weight:700;}
   .chart-wrap{height:220px;}
 
   .rep-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--ink-line);font-size:13px;}
@@ -185,7 +206,26 @@
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Transactions</span>
+        <span class="card-sub" id="txnRangeLabel"></span>
+      </div>
+      <div id="txnList">Loading…</div>
+    </div>
   </main>
+</div>
+
+<div class="modal-overlay" id="txnDeleteModal">
+  <div class="modal">
+    <div class="modal-title">Delete Transaction?</div>
+    <div id="txnDeleteWarning" style="font-size:13px;color:var(--chalk-dim);margin-bottom:18px;line-height:1.5;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTxnDeleteModal()">Cancel</button>
+      <button class="btn-confirm" style="background:var(--barber-red);color:#fff;" onclick="confirmDeleteTxn()">Delete Permanently</button>
+    </div>
+  </div>
 </div>
 
 <div class="print-report" id="printReport">
@@ -295,6 +335,66 @@
     } catch (err) {
       console.error('Customer Growth failed to render:', err);
       document.getElementById('growthList').innerHTML = `<div class="rep-row"><span style="color:var(--chalk-dim);">Couldn't load this section.</span></div>`;
+    }
+
+    loadTransactions(from, to);
+  }
+
+  function fmtTxnDateTime(iso) { return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+
+  const isOwner = window.barberOSSession && window.barberOSSession.role === 'owner';
+
+  async function loadTransactions(from, to) {
+    const list = document.getElementById('txnList');
+    document.getElementById('txnRangeLabel').textContent = `${from} to ${to}`;
+    const data = await fetchJsonSafe(`${API_BASE}/sales?shop_id=${SHOP_ID}&from=${from}&to=${to}`, []);
+
+    if (!data.length) {
+      list.innerHTML = `<div class="txn-row"><span style="color:var(--chalk-dim);">No transactions in this range.</span></div>`;
+      return;
+    }
+
+    list.innerHTML = data.map(t => `
+      <div class="txn-row">
+        <div class="txn-main">
+          <div class="txn-top">${escapeHtml(t.customer_name)} <span style="color:var(--chalk-dim);font-weight:400;">— ${escapeHtml(t.barber_name)}</span></div>
+          <div class="txn-meta">${fmtTxnDateTime(t.created_at)} · ${escapeHtml(t.items || 'No items listed')} · ${escapeHtml(t.payment_methods)} · rung up by ${escapeHtml(t.rung_up_by)}</div>
+        </div>
+        <div class="txn-amount">${fmtKsh(t.total)}</div>
+        ${isOwner ? `<span class="txn-delete" title="Delete transaction" onclick='openTxnDeleteModal(${JSON.stringify(t.id)}, ${JSON.stringify(t.customer_name)}, ${Number(t.total)}, ${t.has_wallet_payment})'>🗑</span>` : ''}
+      </div>`).join('');
+  }
+
+  let pendingDeleteTxnId = null;
+
+  function openTxnDeleteModal(id, customerName, total, hasWalletPayment) {
+    pendingDeleteTxnId = id;
+    const warning = document.getElementById('txnDeleteWarning');
+    let text = `This permanently deletes the ${fmtKsh(total)} transaction for ${customerName}. Product stock will be restored and any commission or loyalty points it earned will be reversed.`;
+    if (hasWalletPayment) {
+      text += ` This sale was paid from the customer's wallet — that amount will be credited back to their balance.`;
+    }
+    warning.textContent = text;
+    document.getElementById('txnDeleteModal').classList.add('open');
+  }
+
+  function closeTxnDeleteModal() {
+    pendingDeleteTxnId = null;
+    document.getElementById('txnDeleteModal').classList.remove('open');
+  }
+
+  async function confirmDeleteTxn() {
+    if (!pendingDeleteTxnId) return;
+    try {
+      const res = await fetch(`${API_BASE}/sales/${pendingDeleteTxnId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Delete failed');
+      }
+      closeTxnDeleteModal();
+      loadReports(); // refresh everything — the deleted sale affects revenue, commissions, etc. too
+    } catch (err) {
+      alert(err.message);
     }
   }
 
