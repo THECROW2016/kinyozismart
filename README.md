@@ -80,6 +80,8 @@ Customers can pre-pay cash now and use it for services later. From a customer's 
 
 When the customer later gets a service, POS has a "Wallet" payment tab alongside M-Pesa/Cash/Card. Selecting it shows their current balance and warns if it's insufficient or if no customer is selected. On checkout, the balance check and deduction happen atomically in the same database transaction as the sale itself — if the balance is insufficient, the whole sale is rejected and nothing is partially recorded. A wallet-paid sale **is** counted as normal revenue (it shows up in Dashboard, Reports, commissions — everything — exactly like a cash or M-Pesa sale), since the service was actually delivered; only the payment method differs.
 
+The wallet is always charged the server's own computed total (from the actual services/products/discount on the sale) — never a client-supplied payment amount — so the amount deducted can never drift from what the sale record itself says was owed.
+
 The full top-up/payment history for each customer is visible in their detail drawer.
 
 ### Staff Attendance & Monthly Report
