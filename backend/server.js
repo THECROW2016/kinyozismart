@@ -117,7 +117,15 @@ app.get('/api/admin/integrity-check-2026-09-09', async (req, res) => {
       UNION ALL SELECT 'sale_payments amount mismatch vs sale total (tolerance 2 cents, non-split only)', COUNT(*)::int FROM sale_payments p JOIN sales s ON s.id=p.sale_id
         WHERE p.method != 'split' AND ABS(p.amount - s.total) > 0.02
     `);
-    res.json(rows);
+
+    const mismatchDetail = await pool.query(`
+      SELECT id, created_at, subtotal, discount_type, discount_value, total,
+        GREATEST(subtotal - (CASE WHEN discount_type='percentage' THEN subtotal * COALESCE(discount_value,0)/100.0 ELSE COALESCE(discount_value,0) END), 0) AS expected_total
+      FROM sales
+      WHERE ABS(total - GREATEST(subtotal - (CASE WHEN discount_type='percentage' THEN subtotal * COALESCE(discount_value,0)/100.0 ELSE COALESCE(discount_value,0) END), 0)) > 0.02
+    `);
+
+    res.json({ checks: rows, mismatch_detail: mismatchDetail.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'audit failed', detail: err.message });
