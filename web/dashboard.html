@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root{
     --ink:#1B1B1D;
@@ -530,7 +529,7 @@
             <span class="card-title">Sales — Last 7 Days</span>
             <span class="card-link">View report</span>
           </div>
-          <div class="chart-wrap"><canvas id="salesChart"></canvas></div>
+          <div class="chart-wrap" id="chartWrap"></div>
         </div>
 
         <div class="card">
@@ -727,32 +726,26 @@
     const values = days.map(d => byDay[d] || 0);
     const labels = days.map(d => new Date(d).toLocaleDateString('en-GB', { weekday: 'short' }));
 
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          data: values,
-          backgroundColor: (c) => c.dataIndex === values.length - 1 ? amber : 'rgba(242,236,221,0.18)',
-          borderRadius: 4,
-          maxBarThickness: 28
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: {
-          backgroundColor: '#1B1B1D', titleColor: chalk, bodyColor: chalk,
-          borderColor: '#3A3936', borderWidth: 1,
-          callbacks: { label: (item) => fmtKsh(item.raw) }
-        }},
-        scales: {
-          x: { grid: { display: false }, ticks: { color: chalkDim, font: { family: 'Inter', size: 11 } } },
-          y: { display: false, grid: { display: false } }
-        }
-      }
+    const wrap = document.getElementById('chartWrap');
+    const width = 400, height = 190;
+    const padL = 8, padR = 8, padT = 10, padB = 22;
+    const plotW = width - padL - padR, plotH = height - padT - padB;
+    const n = values.length;
+    const gap = 10;
+    const barW = (plotW - gap * (n - 1)) / n;
+    const maxVal = Math.max(...values, 1);
+
+    let bars = '';
+    values.forEach((v, i) => {
+      const barH = maxVal > 0 ? (v / maxVal) * plotH : 0;
+      const x = padL + i * (barW + gap);
+      const y = padT + plotH - barH;
+      const isToday = i === n - 1;
+      bars += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(barH, 2)}" rx="4" fill="${isToday ? '#E8A33D' : 'rgba(242,236,221,0.18)'}"><title>${labels[i]}: ${fmtKsh(v)}</title></rect>`;
+      bars += `<text x="${x + barW / 2}" y="${height - 6}" text-anchor="middle" font-size="10.5" fill="#B8B3A6" font-family="Inter, sans-serif">${labels[i]}</text>`;
     });
+
+    wrap.innerHTML = `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:100%;" preserveAspectRatio="none">${bars}</svg>`;
   }
 
   function updateDateTime() {

@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root{
     --ink:#1B1B1D; --ink-raised:#242426; --ink-line:#3A3936;
@@ -168,7 +167,7 @@
       <div>
         <div class="card">
           <div class="card-title">Sales Over Time</div>
-          <div class="chart-wrap"><canvas id="salesChart"></canvas></div>
+          <div class="chart-wrap" id="chartWrap"></div>
         </div>
         <div class="card">
           <div class="card-title">Popular Services</div>
@@ -210,7 +209,6 @@
 <script>
   const SHOP_ID = '11111111-1111-1111-1111-111111111111';
   const API_BASE = window.location.origin + '/api';
-  let chartInstance = null;
   let rangeDays = 30;
 
   function fmtKsh(n) { return 'KSh ' + Number(n).toLocaleString(); }
@@ -257,8 +255,8 @@
       renderChart(sales.daily, from, to);
     } catch (err) {
       console.error('Sales chart failed to render:', err);
-      const wrap = document.querySelector('.chart-wrap');
-      if (wrap) wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--chalk-dim);font-size:12.5px;text-align:center;padding:0 20px;">Couldn't load the chart (the charting library may be blocked). The numbers below are still accurate.</div>`;
+      const wrap = document.getElementById('chartWrap');
+      if (wrap) wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--chalk-dim);font-size:12.5px;text-align:center;padding:0 20px;">Couldn't draw the chart for this range. The numbers below are still accurate.</div>`;
     }
 
     try {
@@ -291,41 +289,64 @@
   }
 
   function renderChart(daily, from, to) {
-    if (typeof Chart === 'undefined') {
-      throw new Error('Chart.js did not load');
-    }
     const days = [];
     let d = new Date(from);
     const end = new Date(to);
     while (d <= end) { days.push(dateStr(d)); d.setDate(d.getDate() + 1); }
 
-    const byDay = Object.fromEntries((daily || []).map(r => [r.day.slice(0,10), Number(r.total)]));
+    const byDay = Object.fromEntries((daily || []).map(r => [r.day.slice(0, 10), Number(r.total)]));
     const values = days.map(d => byDay[d] || 0);
-    const labels = days.map(d => new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short' }));
+    const labels = days.map(d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
 
-    if (chartInstance) chartInstance.destroy();
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          data: values, borderColor: '#E8A33D', backgroundColor: 'rgba(232,163,61,.15)',
-          fill: true, tension: 0.3, pointRadius: 0
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: {
-          backgroundColor: '#1B1B1D', titleColor: '#F2ECDD', bodyColor: '#F2ECDD',
-          borderColor: '#3A3936', borderWidth: 1, callbacks: { label: (item) => fmtKsh(item.raw) }
-        }},
-        scales: {
-          x: { grid: { display: false }, ticks: { color: '#B8B3A6', font: { size: 10 }, maxTicksLimit: 8 } },
-          y: { grid: { color: '#3A3936' }, ticks: { color: '#B8B3A6', font: { size: 10 } } }
-        }
-      }
+    const wrap = document.getElementById('chartWrap');
+    const width = 600, height = 220;
+    const padL = 46, padR = 12, padT = 14, padB = 26;
+    const plotW = width - padL - padR, plotH = height - padT - padB;
+
+    const maxVal = Math.max(...values, 1);
+    const niceMax = Math.ceil(maxVal / 5) * 5 || 5;
+    const n = values.length;
+    const xAt = i => padL + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+    const yAt = v => padT + plotH - (v / niceMax) * plotH;
+
+    const linePoints = values.map((v, i) => `${xAt(i)},${yAt(v)}`).join(' ');
+    const areaPoints = `${xAt(0)},${padT + plotH} ${linePoints} ${xAt(n - 1)},${padT + plotH}`;
+
+    // Gridlines + y-axis labels (5 horizontal bands)
+    let gridSvg = '';
+    for (let g = 0; g <= 5; g++) {
+      const gy = padT + (plotH / 5) * g;
+      const gv = Math.round(niceMax - (niceMax / 5) * g);
+      gridSvg += `<line x1="${padL}" y1="${gy}" x2="${width - padR}" y2="${gy}" stroke="#3A3936" stroke-width="1"/>`;
+      gridSvg += `<text x="${padL - 8}" y="${gy + 3}" text-anchor="end" font-size="9" fill="#B8B3A6" font-family="IBM Plex Mono, monospace">${fmtCompact(gv)}</text>`;
+    }
+
+    // X-axis labels — show at most 8, evenly spaced
+    let labelSvg = '';
+    const labelStep = Math.max(1, Math.ceil(n / 8));
+    for (let i = 0; i < n; i += labelStep) {
+      labelSvg += `<text x="${xAt(i)}" y="${height - 8}" text-anchor="middle" font-size="9" fill="#B8B3A6" font-family="Inter, sans-serif">${labels[i]}</text>`;
+    }
+
+    // Invisible hit circles with native <title> tooltips — no JS hover logic needed
+    let pointsSvg = '';
+    values.forEach((v, i) => {
+      pointsSvg += `<circle cx="${xAt(i)}" cy="${yAt(v)}" r="7" fill="transparent"><title>${labels[i]}: ${fmtKsh(v)}</title></circle>`;
     });
+
+    wrap.innerHTML = `
+      <svg viewBox="0 0 ${width} ${height}" style="width:100%;height:100%;" preserveAspectRatio="none">
+        ${gridSvg}
+        <polygon points="${areaPoints}" fill="#E8A33D" fill-opacity="0.15" stroke="none"/>
+        <polyline points="${linePoints}" fill="none" stroke="#E8A33D" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        ${labelSvg}
+        ${pointsSvg}
+      </svg>`;
+  }
+
+  function fmtCompact(n) {
+    if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
+    return String(n);
   }
 
   document.querySelectorAll('#rangeTabs .range-tab').forEach(tab => {
