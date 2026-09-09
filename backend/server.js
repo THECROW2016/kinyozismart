@@ -77,61 +77,6 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/wallet', walletRoutes);
 
-// TEMPORARY — read-only data integrity audit. Never writes anything.
-// Remove this route once the audit is done.
-app.get('/api/admin/integrity-check-2026-09-09', async (req, res) => {
-  if (req.query.secret !== 'kinyozi-audit-4d81ef') {
-    return res.status(403).json({ error: 'forbidden' });
-  }
-  try {
-    const { rows } = await pool.query(`
-      SELECT 'sales w/o valid barber' AS check_name, COUNT(*)::int AS count FROM sales s LEFT JOIN barbers b ON b.id=s.barber_id WHERE b.id IS NULL
-      UNION ALL SELECT 'sales w/o valid shop', COUNT(*)::int FROM sales s LEFT JOIN shops sh ON sh.id=s.shop_id WHERE sh.id IS NULL
-      UNION ALL SELECT 'sale_line_items w/o valid sale', COUNT(*)::int FROM sale_line_items li LEFT JOIN sales s ON s.id=li.sale_id WHERE s.id IS NULL
-      UNION ALL SELECT 'sale_payments w/o valid sale', COUNT(*)::int FROM sale_payments p LEFT JOIN sales s ON s.id=p.sale_id WHERE s.id IS NULL
-      UNION ALL SELECT 'commissions w/o valid sale', COUNT(*)::int FROM commissions c LEFT JOIN sales s ON s.id=c.sale_id WHERE s.id IS NULL
-      UNION ALL SELECT 'commissions w/o valid barber', COUNT(*)::int FROM commissions c LEFT JOIN barbers b ON b.id=c.barber_id WHERE b.id IS NULL
-      UNION ALL SELECT 'users w/o valid shop', COUNT(*)::int FROM users u LEFT JOIN shops sh ON sh.id=u.shop_id WHERE sh.id IS NULL
-      UNION ALL SELECT 'barbers w/o valid user', COUNT(*)::int FROM barbers b LEFT JOIN users u ON u.id=b.id WHERE u.id IS NULL
-      UNION ALL SELECT 'customers w/o valid shop', COUNT(*)::int FROM customers c LEFT JOIN shops sh ON sh.id=c.shop_id WHERE sh.id IS NULL
-      UNION ALL SELECT 'wallet_transactions w/o valid customer', COUNT(*)::int FROM wallet_transactions wt LEFT JOIN customers c ON c.id=wt.customer_id WHERE c.id IS NULL
-      UNION ALL SELECT 'wallet_transactions w/ dangling sale_id', COUNT(*)::int FROM wallet_transactions wt LEFT JOIN sales s ON s.id=wt.sale_id WHERE wt.sale_id IS NOT NULL AND s.id IS NULL
-      UNION ALL SELECT 'appointments w/o valid shop', COUNT(*)::int FROM appointments a LEFT JOIN shops sh ON sh.id=a.shop_id WHERE sh.id IS NULL
-      UNION ALL SELECT 'appointment_services w/o valid appointment', COUNT(*)::int FROM appointment_services aps LEFT JOIN appointments a ON a.id=aps.appointment_id WHERE a.id IS NULL
-      UNION ALL SELECT 'queue_entries w/o valid shop', COUNT(*)::int FROM queue_entries q LEFT JOIN shops sh ON sh.id=q.shop_id WHERE sh.id IS NULL
-      UNION ALL SELECT 'attendance w/o valid barber', COUNT(*)::int FROM attendance a LEFT JOIN barbers b ON b.id=a.barber_id WHERE b.id IS NULL
-      UNION ALL SELECT 'login_sessions w/o valid user', COUNT(*)::int FROM login_sessions ls LEFT JOIN users u ON u.id=ls.user_id WHERE u.id IS NULL
-      UNION ALL SELECT 'expenses w/o valid shop', COUNT(*)::int FROM expenses e LEFT JOIN shops sh ON sh.id=e.shop_id WHERE sh.id IS NULL
-      UNION ALL SELECT 'products w/o valid shop', COUNT(*)::int FROM products p LEFT JOIN shops sh ON sh.id=p.shop_id WHERE sh.id IS NULL
-      UNION ALL SELECT 'purchase_items w/o valid purchase', COUNT(*)::int FROM purchase_items pi LEFT JOIN purchases p ON p.id=pi.purchase_id WHERE p.id IS NULL
-      UNION ALL SELECT 'services w/o valid shop', COUNT(*)::int FROM services sv LEFT JOIN shops sh ON sh.id=sv.shop_id WHERE sh.id IS NULL
-      UNION ALL SELECT 'negative wallet balances', COUNT(*)::int FROM customers WHERE wallet_balance < 0
-      UNION ALL SELECT 'negative stock quantities', COUNT(*)::int FROM products WHERE stock_quantity < 0
-      UNION ALL SELECT 'barber/beautician/receptionist w/ pin set (should be 0)', COUNT(*)::int FROM users WHERE role IN ('barber','beautician','receptionist') AND pin_hash IS NOT NULL
-      UNION ALL SELECT 'owner/manager/secretary w/o pin set (should be 0)', COUNT(*)::int FROM users WHERE role IN ('owner','manager','secretary') AND pin_hash IS NULL
-      UNION ALL SELECT 'sale total mismatch vs subtotal/discount (tolerance 2 cents)', COUNT(*)::int FROM sales
-        WHERE ABS(total - GREATEST(subtotal - (CASE WHEN discount_type='percentage' THEN subtotal * COALESCE(discount_value,0)/100.0 ELSE COALESCE(discount_value,0) END), 0)) > 0.02
-      UNION ALL SELECT 'sale total mismatch vs sum of line items (tolerance 2 cents)', COUNT(*)::int FROM (
-        SELECT s.id, s.subtotal, SUM(li.line_total) AS line_sum FROM sales s JOIN sale_line_items li ON li.sale_id=s.id GROUP BY s.id, s.subtotal
-      ) x WHERE ABS(x.subtotal - x.line_sum) > 0.02
-      UNION ALL SELECT 'sale_payments amount mismatch vs sale total (tolerance 2 cents, non-split only)', COUNT(*)::int FROM sale_payments p JOIN sales s ON s.id=p.sale_id
-        WHERE p.method != 'split' AND ABS(p.amount - s.total) > 0.02
-    `);
-
-    const mismatchDetail = await pool.query(`
-      SELECT id, created_at, subtotal, discount_type, discount_value, total,
-        GREATEST(subtotal - (CASE WHEN discount_type='percentage' THEN subtotal * COALESCE(discount_value,0)/100.0 ELSE COALESCE(discount_value,0) END), 0) AS expected_total
-      FROM sales
-      WHERE ABS(total - GREATEST(subtotal - (CASE WHEN discount_type='percentage' THEN subtotal * COALESCE(discount_value,0)/100.0 ELSE COALESCE(discount_value,0) END), 0)) > 0.02
-    `);
-
-    res.json({ checks: rows, mismatch_detail: mismatchDetail.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'audit failed', detail: err.message });
-  }
-});
-
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
