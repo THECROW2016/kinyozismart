@@ -232,4 +232,48 @@ router.get('/attendance', async (req, res) => {
   }
 });
 
+// GET /api/reports/staff-sales?shop_id=
+// Per-employee sales broken down by Today / This Week / This Month, so the
+// owner can compare everyone at a glance without picking a date range first.
+// "Week" and "month" are calendar periods (Monday-start week, 1st-of-month),
+// matching how the rest of the app defines "this week"/"this month".
+router.get('/staff-sales', async (req, res) => {
+  const { shop_id } = req.query;
+  if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         u.id, u.full_name, u.role,
+         COALESCE(today.revenue, 0) AS today_revenue, COALESCE(today.cnt, 0) AS today_count,
+         COALESCE(week.revenue, 0) AS week_revenue, COALESCE(week.cnt, 0) AS week_count,
+         COALESCE(month.revenue, 0) AS month_revenue, COALESCE(month.cnt, 0) AS month_count
+       FROM barbers b
+       JOIN users u ON u.id = b.id
+       LEFT JOIN (
+         SELECT barber_id, SUM(total) AS revenue, COUNT(*) AS cnt FROM sales
+         WHERE shop_id = $1 AND created_at::date = CURRENT_DATE
+         GROUP BY barber_id
+       ) today ON today.barber_id = u.id
+       LEFT JOIN (
+         SELECT barber_id, SUM(total) AS revenue, COUNT(*) AS cnt FROM sales
+         WHERE shop_id = $1 AND created_at::date >= date_trunc('week', CURRENT_DATE)::date
+         GROUP BY barber_id
+       ) week ON week.barber_id = u.id
+       LEFT JOIN (
+         SELECT barber_id, SUM(total) AS revenue, COUNT(*) AS cnt FROM sales
+         WHERE shop_id = $1 AND created_at::date >= date_trunc('month', CURRENT_DATE)::date
+         GROUP BY barber_id
+       ) month ON month.barber_id = u.id
+       WHERE b.shop_id = $1 AND u.is_active = true
+       ORDER BY month_revenue DESC NULLS LAST, u.full_name`,
+      [shop_id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to build staff sales report', detail: err.message });
+  }
+});
+
 module.exports = router;

@@ -74,6 +74,10 @@ Barbers, beauticians, and receptionists are real records (needed for POS attribu
 
 This is enforced client-side in `auth-guard.js` (hides nav links + redirects on direct navigation to pages a role can't reach, and exposes a `window.barberOSCanDelete` flag pages check before rendering delete controls) — matching the PIN system's overall security level, not a substitute for real server-side authorization if this goes into production with real money.
 
+### Staff Sales report
+
+Reports has a "Staff Sales" table showing every barber/beautician's revenue and sale count for Today, This Week (Monday-start), and This Month (calendar month) side by side, so the owner can compare everyone at a glance without picking a date range first. Downloadable as CSV.
+
 ### Transactions (Owner-only add/delete)
 
 The Reports page has a "Transactions" list showing every individual sale for the currently selected range, alongside the existing aggregate reports. Only the Admin (owner) sees a delete button on each one — Manager and Secretary can view the list but not remove entries. Adding a transaction is just a normal sale through POS, available to whichever roles already have POS access (Owner, Manager, Secretary).
