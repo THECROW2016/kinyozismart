@@ -247,7 +247,10 @@ router.get('/staff-sales', async (req, res) => {
          u.id, u.full_name, u.role,
          COALESCE(today.revenue, 0) AS today_revenue, COALESCE(today.cnt, 0) AS today_count,
          COALESCE(week.revenue, 0) AS week_revenue, COALESCE(week.cnt, 0) AS week_count,
-         COALESCE(month.revenue, 0) AS month_revenue, COALESCE(month.cnt, 0) AS month_count
+         COALESCE(month.revenue, 0) AS month_revenue, COALESCE(month.cnt, 0) AS month_count,
+         COALESCE(comm_today.amount, 0) AS today_commission,
+         COALESCE(comm_week.amount, 0) AS week_commission,
+         COALESCE(comm_month.amount, 0) AS month_commission
        FROM barbers b
        JOIN users u ON u.id = b.id
        LEFT JOIN (
@@ -265,6 +268,21 @@ router.get('/staff-sales', async (req, res) => {
          WHERE shop_id = $1 AND created_at::date >= date_trunc('month', CURRENT_DATE)::date
          GROUP BY barber_id
        ) month ON month.barber_id = u.id
+       LEFT JOIN (
+         SELECT c.barber_id, SUM(c.amount) AS amount FROM commissions c JOIN sales s ON s.id = c.sale_id
+         WHERE s.shop_id = $1 AND s.created_at::date = CURRENT_DATE
+         GROUP BY c.barber_id
+       ) comm_today ON comm_today.barber_id = u.id
+       LEFT JOIN (
+         SELECT c.barber_id, SUM(c.amount) AS amount FROM commissions c JOIN sales s ON s.id = c.sale_id
+         WHERE s.shop_id = $1 AND s.created_at::date >= date_trunc('week', CURRENT_DATE)::date
+         GROUP BY c.barber_id
+       ) comm_week ON comm_week.barber_id = u.id
+       LEFT JOIN (
+         SELECT c.barber_id, SUM(c.amount) AS amount FROM commissions c JOIN sales s ON s.id = c.sale_id
+         WHERE s.shop_id = $1 AND s.created_at::date >= date_trunc('month', CURRENT_DATE)::date
+         GROUP BY c.barber_id
+       ) comm_month ON comm_month.barber_id = u.id
        WHERE b.shop_id = $1 AND u.is_active = true
        ORDER BY month_revenue DESC NULLS LAST, u.full_name`,
       [shop_id]

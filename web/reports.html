@@ -63,6 +63,8 @@
   .ss-role{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--chalk-dim);margin-left:5px;font-weight:500;}
   .ss-amount{font-family:'IBM Plex Mono',monospace;color:var(--amber);}
   .ss-count{font-size:10.5px;color:var(--chalk-dim);display:block;}
+  .ss-row{cursor:pointer;transition:background .12s ease;}
+  .ss-row:hover{background:rgba(232,163,61,.06);}
 
   .txn-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed var(--ink-line);font-size:12.5px;}
   .txn-row:last-child{border-bottom:none;}
@@ -360,14 +362,46 @@
   function fmtTxnDateTime(iso) { return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
 
   const isOwner = window.barberOSSession && window.barberOSSession.role === 'owner';
+  let staffFilterId = null;
+  let staffFilterName = null;
+
+  // JSON.stringify can produce either quote character depending on content
+  // (e.g. a name containing an apostrophe), so neither a single- nor
+  // double-quoted HTML attribute wrapper is safe on its own. HTML-escaping
+  // the stringified value neutralizes any quote characters at the HTML
+  // level — the browser decodes them back before the onclick handler ever
+  // sees them, so the JS stays syntactically valid either way.
+  function jsAttr(value) { return escapeHtml(JSON.stringify(value)); }
+
+  function filterTxnByStaff(id, name) {
+    staffFilterId = id;
+    staffFilterName = name;
+    const { from, to } = currentRange();
+    loadTransactions(from, to);
+    document.getElementById('txnList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function clearStaffFilter() {
+    staffFilterId = null;
+    staffFilterName = null;
+    const { from, to } = currentRange();
+    loadTransactions(from, to);
+  }
 
   async function loadTransactions(from, to) {
     const list = document.getElementById('txnList');
-    document.getElementById('txnRangeLabel').textContent = `${from} to ${to}`;
-    const data = await fetchJsonSafe(`${API_BASE}/sales?shop_id=${SHOP_ID}&from=${from}&to=${to}`, []);
+    const label = document.getElementById('txnRangeLabel');
+    label.innerHTML = staffFilterName
+      ? `${from} to ${to} — <strong>${escapeHtml(staffFilterName)}</strong> <a href="javascript:void(0)" onclick="clearStaffFilter()" style="color:var(--amber);">clear</a>`
+      : `${from} to ${to}`;
+
+    const url = staffFilterId
+      ? `${API_BASE}/sales?shop_id=${SHOP_ID}&from=${from}&to=${to}&barber_id=${staffFilterId}`
+      : `${API_BASE}/sales?shop_id=${SHOP_ID}&from=${from}&to=${to}`;
+    const data = await fetchJsonSafe(url, []);
 
     if (!data.length) {
-      list.innerHTML = `<div class="txn-row"><span style="color:var(--chalk-dim);">No transactions in this range.</span></div>`;
+      list.innerHTML = `<div class="txn-row"><span style="color:var(--chalk-dim);">No transactions in this range${staffFilterName ? ' for ' + escapeHtml(staffFilterName) : ''}.</span></div>`;
       return;
     }
 
@@ -375,10 +409,10 @@
       <div class="txn-row">
         <div class="txn-main">
           <div class="txn-top">${escapeHtml(t.customer_name)} <span style="color:var(--chalk-dim);font-weight:400;">— ${escapeHtml(t.barber_name)}</span></div>
-          <div class="txn-meta">${fmtTxnDateTime(t.created_at)} · ${escapeHtml(t.items || 'No items listed')} · ${escapeHtml(t.payment_methods)} · rung up by ${escapeHtml(t.rung_up_by)}</div>
+          <div class="txn-meta">${fmtTxnDateTime(t.created_at)} · ${escapeHtml(t.items || 'No items listed')} · ${escapeHtml(t.payment_methods)} · rung up by ${escapeHtml(t.rung_up_by)}${Number(t.commission_amount) > 0 ? ` · commission ${fmtKsh(t.commission_amount)}` : ''}</div>
         </div>
         <div class="txn-amount">${fmtKsh(t.total)}</div>
-        ${isOwner ? `<span class="txn-delete" title="Delete transaction" onclick='openTxnDeleteModal(${JSON.stringify(t.id)}, ${JSON.stringify(t.customer_name)}, ${Number(t.total)}, ${t.has_wallet_payment})'>🗑</span>` : ''}
+        ${isOwner ? `<span class="txn-delete" title="Delete transaction" onclick='openTxnDeleteModal(${jsAttr(t.id)}, ${jsAttr(t.customer_name)}, ${Number(t.total)}, ${t.has_wallet_payment})'>🗑</span>` : ''}
       </div>`).join('');
   }
 
@@ -732,17 +766,18 @@
       }
 
       const rowHtml = s => `
-        <tr>
+        <tr class="ss-row" onclick='filterTxnByStaff(${jsAttr(s.id)}, ${jsAttr(s.full_name)})' title="View ${escapeHtml(s.full_name)}'s sales below">
           <td><span class="ss-name">${escapeHtml(s.full_name)}</span><span class="ss-role">${escapeHtml(s.role)}</span></td>
-          <td><span class="ss-amount">${fmtKsh(s.today_revenue)}</span><span class="ss-count">${s.today_count} sale${s.today_count == 1 ? '' : 's'}</span></td>
-          <td><span class="ss-amount">${fmtKsh(s.week_revenue)}</span><span class="ss-count">${s.week_count} sale${s.week_count == 1 ? '' : 's'}</span></td>
-          <td><span class="ss-amount">${fmtKsh(s.month_revenue)}</span><span class="ss-count">${s.month_count} sale${s.month_count == 1 ? '' : 's'}</span></td>
+          <td><span class="ss-amount">${fmtKsh(s.today_revenue)}</span><span class="ss-count">${s.today_count} sale${s.today_count == 1 ? '' : 's'} · comm. ${fmtKsh(s.today_commission)}</span></td>
+          <td><span class="ss-amount">${fmtKsh(s.week_revenue)}</span><span class="ss-count">${s.week_count} sale${s.week_count == 1 ? '' : 's'} · comm. ${fmtKsh(s.week_commission)}</span></td>
+          <td><span class="ss-amount">${fmtKsh(s.month_revenue)}</span><span class="ss-count">${s.month_count} sale${s.month_count == 1 ? '' : 's'} · comm. ${fmtKsh(s.month_commission)}</span></td>
         </tr>`;
 
       el.innerHTML = `<table class="ss-table">
         <thead><tr><th>Employee</th><th>Today</th><th>This Week</th><th>This Month</th></tr></thead>
         <tbody>${staffSalesData.map(rowHtml).join('')}</tbody>
-      </table>`;
+      </table>
+      <div style="font-size:11px;color:var(--chalk-dim);margin-top:10px;">Click an employee to view their individual sales in the Transactions list below.</div>`;
     } catch (err) {
       console.error('Staff Sales failed to load:', err);
       el.innerHTML = `<div style="color:var(--chalk-dim);font-size:12.5px;">Couldn't load this section.</div>`;
@@ -756,10 +791,13 @@
       { label: 'Role', get: s => s.role },
       { label: "Today's Sales (KSh)", get: s => Number(s.today_revenue).toFixed(2) },
       { label: "Today's Count", get: s => s.today_count },
+      { label: "Today's Commission (KSh)", get: s => Number(s.today_commission).toFixed(2) },
       { label: "This Week's Sales (KSh)", get: s => Number(s.week_revenue).toFixed(2) },
       { label: "This Week's Count", get: s => s.week_count },
+      { label: "This Week's Commission (KSh)", get: s => Number(s.week_commission).toFixed(2) },
       { label: "This Month's Sales (KSh)", get: s => Number(s.month_revenue).toFixed(2) },
-      { label: "This Month's Count", get: s => s.month_count }
+      { label: "This Month's Count", get: s => s.month_count },
+      { label: "This Month's Commission (KSh)", get: s => Number(s.month_commission).toFixed(2) }
     ]), `staff_sales_${dateStr(new Date())}.csv`, 'text/csv;charset=utf-8');
   }
 

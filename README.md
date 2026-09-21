@@ -76,7 +76,9 @@ This is enforced client-side in `auth-guard.js` (hides nav links + redirects on 
 
 ### Staff Sales report
 
-Reports has a "Staff Sales" table showing every barber/beautician's revenue and sale count for Today, This Week (Monday-start), and This Month (calendar month) side by side, so the owner can compare everyone at a glance without picking a date range first. Downloadable as CSV.
+Reports has a "Staff Sales" table showing every barber/beautician's revenue, sale count, **and commission earned** for Today, This Week (Monday-start), and This Month (calendar month) side by side, so the owner can compare everyone at a glance without picking a date range first. Downloadable as CSV.
+
+Clicking any employee's row filters the Transactions list below to just their sales within the currently selected range — a "clear" link on the range label removes the filter and goes back to everyone. Each transaction line also shows its commission amount when filtered this way.
 
 ### Transactions (Owner-only add/delete)
 

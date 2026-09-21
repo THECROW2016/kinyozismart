@@ -155,19 +155,27 @@ router.post('/', async (req, res) => {
 // delete a mistaken entry — different from /api/reports/sales, which
 // returns daily aggregates for the sales chart)
 router.get('/', async (req, res) => {
-  const { shop_id, from, to } = req.query;
+  const { shop_id, from, to, barber_id } = req.query;
   if (!shop_id || !from || !to) return res.status(400).json({ error: 'shop_id, from, and to are required' });
 
   try {
+    const params = [shop_id, from, to];
+    let barberFilter = '';
+    if (barber_id) {
+      params.push(barber_id);
+      barberFilter = `AND sa.barber_id = $${params.length}`;
+    }
+
     const { rows } = await pool.query(
       `SELECT
-         sa.id, sa.created_at,
+         sa.id, sa.created_at, sa.barber_id,
          COALESCE(cu.full_name, 'Walk-in') AS customer_name,
          bu.full_name AS barber_name,
          COALESCE(item_agg.items, '') AS items,
          sa.subtotal, sa.total,
          COALESCE(pay_agg.methods, '') AS payment_methods,
          ru.full_name AS rung_up_by,
+         COALESCE(comm.amount, 0) AS commission_amount,
          EXISTS(SELECT 1 FROM sale_payments sp WHERE sp.sale_id = sa.id AND sp.method = 'wallet') AS has_wallet_payment
        FROM sales sa
        LEFT JOIN customers cu ON cu.id = sa.customer_id
@@ -188,9 +196,12 @@ router.get('/', async (req, res) => {
          SELECT string_agg(DISTINCT sp.method::text, ', ') AS methods
          FROM sale_payments sp WHERE sp.sale_id = sa.id
        ) pay_agg ON true
-       WHERE sa.shop_id = $1 AND sa.created_at::date BETWEEN $2 AND $3
+       LEFT JOIN LATERAL (
+         SELECT SUM(amount) AS amount FROM commissions WHERE sale_id = sa.id
+       ) comm ON true
+       WHERE sa.shop_id = $1 AND sa.created_at::date BETWEEN $2 AND $3 ${barberFilter}
        ORDER BY sa.created_at DESC`,
-      [shop_id, from, to]
+      params
     );
     res.json(rows);
   } catch (err) {
