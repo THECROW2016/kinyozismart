@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shop profit calculator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+:root{
+  --bg:#f1f5f4;--surface:#fff;--ink:#13211d;--muted:#5a6b66;--line:#d6e0dd;
+  --profit:#1b7a4b;--loss:#c0392b;--c1:#1d4f91;--c2:#8a5cc2;--c3:#d08a1c;--c4:#c0392b;--field:#f7faf9;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1715;--surface:#17221f;--ink:#e8f0ed;--muted:#92a49e;--line:#2a3a36;
+  --profit:#4cc58a;--loss:#ef7b6e;--c1:#6ea2e8;--c2:#b794e6;--c3:#e6b04e;--c4:#ef7b6e;--field:#0f1715;}}
+:root[data-theme="dark"]{
+  --bg:#0f1715;--surface:#17221f;--ink:#e8f0ed;--muted:#92a49e;--line:#2a3a36;
+  --profit:#4cc58a;--loss:#ef7b6e;--c1:#6ea2e8;--c2:#b794e6;--c3:#e6b04e;--c4:#ef7b6e;--field:#0f1715;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.1;margin:0 0 6px;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 24px;max-width:56ch}
+.grid{display:grid;gap:20px;grid-template-columns:1fr}
+@media(min-width:860px){.grid{grid-template-columns:1fr 360px;align-items:start}.result{grid-column:2;grid-row:1;position:sticky;top:16px}.inputs{grid-column:1;grid-row:1}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{font-size:18px;margin:0 0 2px;font-weight:600}
+.hint{color:var(--muted);font-size:14px;margin:0 0 14px}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.row label,.row .nm{flex:1;min-width:0}
+label{font-size:15px}
+input,select{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+input[type=number]{width:130px;text-align:right;font-variant-numeric:tabular-nums}
+.row .nm input{width:100%}
+.pct{width:90px!important}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 12px}
+button:hover{border-color:var(--muted)}
+.x{padding:6px 10px;color:var(--muted)}
+.result .card{margin:0}
+.net-l{color:var(--muted);font-size:14px;margin:0}
+.net{font-size:clamp(34px,8vw,46px);font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.1;font-variant-numeric:tabular-nums}
+.net.pos{color:var(--profit)}.net.neg{color:var(--loss)}
+.margin{margin:4px 0 16px;color:var(--muted);font-size:15px}
+.bar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--line);margin-bottom:12px}
+.bar span{display:block;min-width:0;transition:width .25s}
+.lines{margin:0;padding:0;list-style:none}
+.lines li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);font-size:15px;font-variant-numeric:tabular-nums}
+.lines li.t{font-weight:600}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.warn{color:var(--loss);font-size:14px;margin:10px 0 0;min-height:1.2em}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+@media(prefers-reduced-motion:reduce){.bar span{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>Shop profit calculator</h1><button id="reset" type="button">Reset</button></div>
+  <p class="sub">Enter what came in and everything that went out for the same period. The net profit updates as you type. All amounts are in KES.</p>
+
+  <div class="grid">
+    <aside class="result" aria-live="polite">
+      <div class="card">
+        <p class="net-l">Net profit</p>
+        <p class="net pos" id="net">KES 0</p>
+        <p class="margin" id="margin">Profit margin 0%</p>
+        <div class="bar" id="bar" aria-hidden="true"></div>
+        <ul class="lines" id="lines"></ul>
+        <p class="warn" id="warn"></p>
+      </div>
+    </aside>
+
+    <main class="inputs">
+      <section class="card">
+        <h2>Money in</h2>
+        <p class="hint">Total takings for the period, M-Pesa and cash combined.</p>
+        <div class="row"><label for="svc">Services (cuts, shaves, treatments)</label><input id="svc" type="number" min="0" inputmode="decimal" placeholder="0"></div>
+        <div class="row"><label for="prod">Product sales</label><input id="prod" type="number" min="0" inputmode="decimal" placeholder="0"></div>
+        <div class="row"><label for="oth">Other income</label><input id="oth" type="number" min="0" inputmode="decimal" placeholder="0"></div>
+      </section>
+
+      <section class="card">
+        <h2>Costs tied to sales</h2>
+        <p class="hint">These rise and fall with how busy you are.</p>
+        <div class="row"><label for="comm">Barber commission, % of services income</label><input id="comm" class="pct" type="number" min="0" max="100" inputmode="decimal" placeholder="0"></div>
+        <div class="row"><label for="cogs">Cost of products sold (stock bought)</label><input id="cogs" type="number" min="0" inputmode="decimal" placeholder="0"></div>
+        <div class="row"><label for="fee">M-Pesa and card fees, % of total income</label><input id="fee" class="pct" type="number" min="0" max="100" inputmode="decimal" placeholder="0"></div>
+      </section>
+
+      <section class="card">
+        <h2>Shop expenses</h2>
+        <p class="hint">Rename a row or add your own.</p>
+        <div id="exp"></div>
+        <button type="button" id="add">Add expense</button>
+      </section>
+
+      <section class="card">
+        <h2>Tax</h2>
+        <p class="hint">Leave at 0 if you want profit before tax. Enter the rate that applies to your business.</p>
+        <div class="row">
+          <select id="basis" aria-label="Tax basis"><option value="profit">% of profit before tax</option><option value="income">% of total income</option></select>
+          <input id="tax" class="pct" type="number" min="0" max="100" inputmode="decimal" placeholder="0" aria-label="Tax rate percent">
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  var DEFAULTS=["Rent","Electricity and water","Salaries","Supplies and cleaning","Licences and permits","Other"];
+  var $=function(id){return document.getElementById(id)};
+  var expEl=$("exp");
+  var num=function(v){var n=parseFloat(v);return isFinite(n)&&n>0?n:0};
+  var kes=function(n){var s=Math.abs(Math.round(n)).toLocaleString("en-KE");return (n<0?"−":"")+"KES "+s};
+
+  function addRow(name){
+    var d=document.createElement("div");d.className="row";
+    var w=document.createElement("div");w.className="nm";
+    var t=document.createElement("input");t.type="text";t.value=name||"";t.placeholder="Expense name";t.setAttribute("aria-label","Expense name");
+    w.appendChild(t);
+    var a=document.createElement("input");a.type="number";a.min="0";a.placeholder="0";a.inputMode="decimal";a.className="amt";a.setAttribute("aria-label","Amount");
+    a.addEventListener("input",calc);
+    var x=document.createElement("button");x.type="button";x.className="x";x.textContent="Remove";x.setAttribute("aria-label","Remove expense");
+    x.addEventListener("click",function(){d.remove();calc()});
+    d.appendChild(w);d.appendChild(a);d.appendChild(x);expEl.appendChild(d);
+    return t;
+  }
+
+  function calc(){
+    var svc=num($("svc").value),prod=num($("prod").value),oth=num($("oth").value);
+    var income=svc+prod+oth;
+    var comm=svc*Math.min(num($("comm").value),100)/100;
+    var cogs=num($("cogs").value);
+    var fees=income*Math.min(num($("fee").value),100)/100;
+    var gross=income-comm-cogs-fees;
+    var opex=0,amts=expEl.querySelectorAll(".amt");
+    for(var i=0;i<amts.length;i++)opex+=num(amts[i].value);
+    var pbt=gross-opex;
+    var rate=Math.min(num($("tax").value),100)/100;
+    var tax=$("basis").value==="income"?income*rate:Math.max(pbt,0)*rate;
+    var net=pbt-tax;
+    var out=comm+cogs+fees+opex+tax;
+
+    var n=$("net");n.textContent=kes(net);n.className="net "+(net<0?"neg":"pos");
+    $("margin").textContent=income>0?"Profit margin "+(net/income*100).toFixed(1)+"% of income":"Profit margin: enter your income to see it";
+
+    var segs=[["Commission",comm,"var(--c1)"],["Products and fees",cogs+fees,"var(--c2)"],["Shop expenses",opex,"var(--c3)"],["Tax",tax,"var(--c4)"],["Profit kept",Math.max(net,0),"var(--profit)"]];
+    var base=Math.max(income,out)||1,bar=$("bar");bar.innerHTML="";
+    segs.forEach(function(s){var e=document.createElement("span");e.style.width=(s[1]/base*100)+"%";e.style.background=s[2];e.title=s[0];bar.appendChild(e)});
+
+    var rows=[["Total income",income,"t"],["Barber commission",-comm,0,segs[0][2]],["Cost of products sold",-cogs,0,segs[1][2]],["M-Pesa and card fees",-fees,0,segs[1][2]],["Gross profit",gross,"t"],["Shop expenses",-opex,0,segs[2][2]],["Profit before tax",pbt,"t"],["Tax",-tax,0,segs[3][2]],["Net profit",net,"t"]];
+    var ul=$("lines");ul.innerHTML="";
+    rows.forEach(function(r){var li=document.createElement("li");if(r[2])li.className="t";
+      var l=document.createElement("span");
+      if(r[3]){var dt=document.createElement("i");dt.className="dot";dt.style.background=r[3];l.appendChild(dt)}
+      l.appendChild(document.createTextNode(r[0]));
+      var v=document.createElement("span");v.textContent=kes(r[1]);
+      li.appendChild(l);li.appendChild(v);ul.appendChild(li)});
+
+    $("warn").textContent=net<0?"You are spending more than you earn. Costs are "+kes(out-income)+" above income for this period.":"";
+  }
+
+  function init(){
+    expEl.innerHTML="";
+    DEFAULTS.forEach(addRow);
+    ["svc","prod","oth","comm","cogs","fee","tax"].forEach(function(id){$(id).value=""});
+    calc();
+  }
+
+  ["svc","prod","oth","comm","cogs","fee","tax","basis"].forEach(function(id){$(id).addEventListener("input",calc)});
+  $("add").addEventListener("click",function(){addRow("").focus()});
+  $("reset").addEventListener("click",init);
+  init();
+})();
+</script>
+</body>
+</html>
