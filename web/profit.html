@@ -53,10 +53,14 @@ button:hover{border-color:var(--muted)}
 .warn{color:var(--loss);font-size:14px;margin:10px 0 0;min-height:1.2em}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
 @media(prefers-reduced-motion:reduce){.bar span{transition:none}}
+.back{display:inline-block;margin:0 0 10px;color:var(--c1);text-decoration:none;font-size:15px}.back:hover{text-decoration:underline}
 </style>
+<script src="utils.js"></script>
+<script src="auth-guard.js"></script>
 </head>
 <body>
 <div class="wrap">
+  <a class="back" href="dashboard.html">← Back to dashboard</a>
   <div class="top"><h1>Shop profit calculator</h1><button id="reset" type="button">Reset</button></div>
   <p class="sub">Enter what came in and everything that went out for the same period. The net profit updates as you type. All amounts are in KES.</p>
 

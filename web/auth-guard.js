@@ -63,7 +63,8 @@
     'staff.html':        ['owner', 'manager'],
     'inventory.html':    ['owner', 'manager'],
     'reports.html':      ['owner', 'manager'],
-    'expenses.html':     ['owner', 'manager']
+    'expenses.html':     ['owner', 'manager'],
+    'profit.html':       ['owner', 'manager']
     // pos.html, queue.html, appointments.html, customers.html are open to all three
   };
 
