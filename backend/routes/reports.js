@@ -294,4 +294,57 @@ router.get('/staff-sales', async (req, res) => {
   }
 });
 
+// GET /api/reports/profit-breakdown?shop_id=&from=&to=
+// Everything the profit calculator needs in one call: income split into
+// services/products, discounts, commissions, product cost, and expenses by category.
+router.get('/profit-breakdown', async (req, res) => {
+  const { shop_id } = req.query;
+  if (!shop_id) return res.status(400).json({ error: 'shop_id is required' });
+  const { from, to } = dateRange(req);
+  try {
+    const sales = await pool.query(
+      `SELECT COUNT(*) AS n, COALESCE(SUM(subtotal),0) AS subtotal, COALESCE(SUM(total),0) AS total
+       FROM sales WHERE shop_id = $1 AND created_at::date BETWEEN $2 AND $3`,
+      [shop_id, from, to]
+    );
+    const lines = await pool.query(
+      `SELECT
+         COALESCE(SUM(li.line_total) FILTER (WHERE li.item_type = 'service'), 0) AS services,
+         COALESCE(SUM(li.line_total) FILTER (WHERE li.item_type = 'product'), 0) AS products,
+         COALESCE(SUM(li.quantity * p.cost_price) FILTER (WHERE li.item_type = 'product'), 0) AS product_cost
+       FROM sale_line_items li
+       JOIN sales sa ON sa.id = li.sale_id
+       LEFT JOIN products p ON p.id = li.product_id
+       WHERE sa.shop_id = $1 AND sa.created_at::date BETWEEN $2 AND $3`,
+      [shop_id, from, to]
+    );
+    const commissions = await pool.query(
+      `SELECT COALESCE(SUM(c.amount),0) AS total FROM commissions c JOIN sales sa ON sa.id = c.sale_id
+       WHERE sa.shop_id = $1 AND sa.created_at::date BETWEEN $2 AND $3`,
+      [shop_id, from, to]
+    );
+    const expenses = await pool.query(
+      `SELECT category, COALESCE(SUM(amount),0) AS total FROM expenses
+       WHERE shop_id = $1 AND incurred_at BETWEEN $2 AND $3
+       GROUP BY category ORDER BY total DESC`,
+      [shop_id, from, to]
+    );
+    const subtotal = Number(sales.rows[0].subtotal);
+    const total = Number(sales.rows[0].total);
+    res.json({
+      from, to,
+      sale_count: Number(sales.rows[0].n),
+      services: Number(lines.rows[0].services),
+      products: Number(lines.rows[0].products),
+      discounts: Math.max(subtotal - total, 0),
+      product_cost: Number(lines.rows[0].product_cost),
+      commissions: Number(commissions.rows[0].total),
+      expenses: expenses.rows.map(r => ({ category: r.category, total: Number(r.total) }))
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load profit breakdown', detail: err.message });
+  }
+});
+
 module.exports = router;

@@ -1,183 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Shop profit calculator</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<meta charset="UTF-8">
+<title>BarberOS — Profit Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f1f5f4;--surface:#fff;--ink:#13211d;--muted:#5a6b66;--line:#d6e0dd;
-  --profit:#1b7a4b;--loss:#c0392b;--c1:#1d4f91;--c2:#8a5cc2;--c3:#d08a1c;--c4:#c0392b;--field:#f7faf9;
-  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1715;--surface:#17221f;--ink:#e8f0ed;--muted:#92a49e;--line:#2a3a36;
-  --profit:#4cc58a;--loss:#ef7b6e;--c1:#6ea2e8;--c2:#b794e6;--c3:#e6b04e;--c4:#ef7b6e;--field:#0f1715;}}
-:root[data-theme="dark"]{
-  --bg:#0f1715;--surface:#17221f;--ink:#e8f0ed;--muted:#92a49e;--line:#2a3a36;
-  --profit:#4cc58a;--loss:#ef7b6e;--c1:#6ea2e8;--c2:#b794e6;--c3:#e6b04e;--c4:#ef7b6e;--field:#0f1715;}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*,*::before,*::after{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:1000px;margin:0 auto;padding:24px 16px 48px}
-h1{font-size:clamp(26px,5vw,38px);line-height:1.1;margin:0 0 6px;font-weight:800;letter-spacing:-.02em}
-.sub{color:var(--muted);margin:0 0 24px;max-width:56ch}
-.grid{display:grid;gap:20px;grid-template-columns:1fr}
-@media(min-width:860px){.grid{grid-template-columns:1fr 360px;align-items:start}.result{grid-column:2;grid-row:1;position:sticky;top:16px}.inputs{grid-column:1;grid-row:1}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
-.card h2{font-size:18px;margin:0 0 2px;font-weight:600}
-.hint{color:var(--muted);font-size:14px;margin:0 0 14px}
-.row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
-.row label,.row .nm{flex:1;min-width:0}
-label{font-size:15px}
-input,select{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-width:0}
-input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
-input[type=number]{width:130px;text-align:right;font-variant-numeric:tabular-nums}
-.row .nm input{width:100%}
-.pct{width:90px!important}
-button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 12px}
-button:hover{border-color:var(--muted)}
-.x{padding:6px 10px;color:var(--muted)}
-.result .card{margin:0}
-.net-l{color:var(--muted);font-size:14px;margin:0}
-.net{font-size:clamp(34px,8vw,46px);font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.1;font-variant-numeric:tabular-nums}
-.net.pos{color:var(--profit)}.net.neg{color:var(--loss)}
-.margin{margin:4px 0 16px;color:var(--muted);font-size:15px}
-.bar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--line);margin-bottom:12px}
-.bar span{display:block;min-width:0;transition:width .25s}
-.lines{margin:0;padding:0;list-style:none}
-.lines li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);font-size:15px;font-variant-numeric:tabular-nums}
-.lines li.t{font-weight:600}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
-.warn{color:var(--loss);font-size:14px;margin:10px 0 0;min-height:1.2em}
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
-@media(prefers-reduced-motion:reduce){.bar span{transition:none}}
-.back{display:inline-block;margin:0 0 10px;color:var(--c1);text-decoration:none;font-size:15px}.back:hover{text-decoration:underline}
+  :root{
+    --ink:#1B1B1D; --ink-raised:#242426; --ink-line:#3A3936;
+    --chalk:#F2ECDD; --chalk-dim:#B8B3A6;
+    --barber-red:#C8352E; --barber-blue:#2C4A7C;
+    --amber:#E8A33D; --amber-dim:#8A6428; --green:#4E9A63;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--ink);color:var(--chalk);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .app{display:grid;grid-template-columns:76px 1fr;min-height:100vh;}
+  .rail{position:relative;background:repeating-linear-gradient(-45deg, var(--barber-red) 0 18px, var(--chalk) 18px 36px, var(--barber-blue) 36px 54px, var(--chalk) 54px 72px);background-size:200% 200%;animation:pole 14s linear infinite;display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px;}
+  @keyframes pole{from{background-position:0 0;}to{background-position:0 220px;}}
+  @media (prefers-reduced-motion: reduce){.rail{animation:none;}}
+  .rail::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(27,27,29,.15), rgba(27,27,29,.55) 60%, rgba(27,27,29,.85));}
+  .rail-logo{position:relative;z-index:1;width:40px;height:40px;border-radius:50%;background:var(--ink);border:2px solid var(--chalk);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;margin-bottom:18px;flex-shrink:0;}
+  .rail-nav{position:relative;z-index:1;display:flex;flex-direction:column;gap:4px;width:100%;align-items:center;}
+  .rail-item{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--chalk);cursor:pointer;text-decoration:none;transition:background .15s ease;}
+  .rail-item svg{width:19px;height:19px;}
+  .rail-item:hover{background:rgba(27,27,29,.5);}
+  .rail-item.active{background:var(--ink);box-shadow:0 0 0 1.5px var(--amber);}
+  .logout-item{margin-top:10px;color:var(--barber-red);}
+  .logout-item:hover{background:rgba(200,53,46,.15);}
+  .rail-toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink-raised);border:1px solid var(--ink-line);color:var(--chalk);padding:12px 20px;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .2s ease, transform .2s ease;pointer-events:none;z-index:100;}
+  .rail-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  main{padding:28px 36px 60px;max-width:1100px;}
+  .topbar{margin-bottom:18px;}
+  .shop-name{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;}
+  .shop-sub{color:var(--chalk-dim);font-size:13px;margin-top:4px;}
+  .period{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:20px;}
+  .custom{display:inline-flex;align-items:center;gap:8px;color:var(--chalk-dim);font-size:13px;}
+  .custom[hidden]{display:none;}
+  .status{font-size:12.5px;color:var(--chalk-dim);margin-left:auto;}
+  .status.err{color:var(--barber-red);} .status.ok::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:7px;}
+  .layout{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;}
+  .result{position:sticky;top:16px;}
+  .panel{background:var(--ink-raised);border:1px solid var(--ink-line);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+  .result .panel{margin:0;}
+  .panel h2{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:22px;letter-spacing:.5px;margin:0 0 2px;}
+  .hint{color:var(--chalk-dim);font-size:12.5px;margin:0 0 14px;}
+  .row{display:flex;gap:10px;align-items:center;margin-bottom:10px;}
+  .row label,.row .nm{flex:1;min-width:0;font-size:13.5px;}
+  input,select{font-family:'Inter',sans-serif;font-size:13.5px;color:var(--chalk);background:var(--ink);border:1px solid var(--ink-line);border-radius:8px;padding:9px 11px;min-width:0;}
+  input[type=number]{width:140px;text-align:right;font-family:'IBM Plex Mono',monospace;}
+  input[type=date]{color-scheme:dark;}
+  input.auto{border-color:var(--amber-dim);}
+  .row .nm input{width:100%;}
+  .pct{width:96px!important;}
+  button{font-family:'Inter',sans-serif;cursor:pointer;}
+  .btn-ghost{background:transparent;border:1px solid var(--ink-line);color:var(--chalk);border-radius:8px;padding:9px 13px;font-size:13px;}
+  .btn-ghost:hover{border-color:var(--amber);color:var(--amber);}
+  .x{background:none;border:none;color:var(--chalk-dim);font-size:15px;padding:6px 8px;border-radius:6px;}
+  .x:hover{color:var(--barber-red);background:rgba(200,53,46,.12);}
+  .r-l{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--chalk-dim);}
+  .net{font-family:'IBM Plex Mono',monospace;font-size:clamp(28px,5vw,36px);font-weight:600;color:var(--green);margin:6px 0 4px;word-break:break-word;}
+  .net.neg{color:var(--barber-red);}
+  .margin{color:var(--chalk-dim);font-size:13px;margin-bottom:16px;}
+  .bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--ink-line);margin-bottom:12px;}
+  .bar span{display:block;transition:width .25s;}
+  .lines{list-style:none;margin:0;padding:0;}
+  .lines li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--ink-line);font-size:13px;}
+  .lines li span:last-child{font-family:'IBM Plex Mono',monospace;}
+  .lines li.t{font-weight:700;}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;}
+  .warn{color:var(--barber-red);font-size:12.5px;margin:10px 0 0;min-height:1em;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}.result{position:static;order:-1;}main{padding:20px 16px 48px;}.status{margin-left:0;width:100%;}}
+  @media (max-width:480px){.app{grid-template-columns:50px 1fr;}.rail-logo{width:32px;height:32px;font-size:12px;margin-bottom:12px;}.rail-item{width:36px;height:36px;}.rail-item svg{width:16px;height:16px;}main{padding:16px 12px 40px;}.shop-name{font-size:24px;}input[type=number]{width:110px;}}
+  :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+  @media (prefers-reduced-motion:reduce){.bar span{transition:none;}}
 </style>
-<script src="utils.js"></script>
-<script src="auth-guard.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <a class="back" href="dashboard.html">← Back to dashboard</a>
-  <div class="top"><h1>Shop profit calculator</h1><button id="reset" type="button">Reset</button></div>
-  <p class="sub">Enter what came in and everything that went out for the same period. The net profit updates as you type. All amounts are in KES.</p>
+<script src="utils.js"></script>
+<script src="auth-guard.js"></script>
+<div class="app">
+  <nav class="rail" aria-label="Main navigation">
+    <div class="rail-logo">BO</div>
+    <div class="rail-nav">
+      <a class="rail-item" href="dashboard.html" title="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></a>
+      <a class="rail-item" href="pos.html" title="POS / New Sale"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></a>
+      <a class="rail-item" href="appointments.html" title="Appointments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></a>
+      <a class="rail-item" href="queue.html" title="Queue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="12" x2="21" y2="12"/><circle cx="4" cy="18" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="18" x2="21" y2="18"/></svg></a>
+      <a class="rail-item" href="customers.html" title="Customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></a>
+      <a class="rail-item" href="staff.html" title="Staff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5"/><path d="M16 4.5c1.6.4 2.8 1.9 2.8 3.6 0 1.7-1.2 3.2-2.8 3.6"/><path d="M18.5 14.2c2.3.6 4 2.6 4 5"/></svg></a>
+      <a class="rail-item" href="inventory.html" title="Inventory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/></svg></a>
+      <a class="rail-item" href="reports.html" title="Reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="21" y2="4"/></svg></a>
+      <a class="rail-item" href="expenses.html" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg></a>
+      <a class="rail-item active" href="profit.html" title="Profit Calculator"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="7.5" x2="16" y2="7.5"/><line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="16" y1="12" x2="16.01" y2="12"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="12" y1="16" x2="12.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg></a>
+      <a class="rail-item" href="settings.html" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></a>
+      <div class="rail-item logout-item" title="Logout" onclick="doLogout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+    </div>
+  </nav>
+  <div class="rail-toast" id="railToast"></div>
 
-  <div class="grid">
-    <aside class="result" aria-live="polite">
-      <div class="card">
-        <p class="net-l">Net profit</p>
-        <p class="net pos" id="net">KES 0</p>
-        <p class="margin" id="margin">Profit margin 0%</p>
-        <div class="bar" id="bar" aria-hidden="true"></div>
-        <ul class="lines" id="lines"></ul>
-        <p class="warn" id="warn"></p>
+  <main>
+    <div class="topbar">
+      <div>
+        <div class="shop-name">PROFIT CALCULATOR</div>
+        <div class="shop-sub">Kinyozi Management System · what you really keep after every cost</div>
       </div>
-    </aside>
+    </div>
 
-    <main class="inputs">
-      <section class="card">
-        <h2>Money in</h2>
-        <p class="hint">Total takings for the period, M-Pesa and cash combined.</p>
-        <div class="row"><label for="svc">Services (cuts, shaves, treatments)</label><input id="svc" type="number" min="0" inputmode="decimal" placeholder="0"></div>
-        <div class="row"><label for="prod">Product sales</label><input id="prod" type="number" min="0" inputmode="decimal" placeholder="0"></div>
-        <div class="row"><label for="oth">Other income</label><input id="oth" type="number" min="0" inputmode="decimal" placeholder="0"></div>
-      </section>
+    <div class="period">
+      <select id="period" aria-label="Period">
+        <option value="today">Today</option><option value="week">This week</option>
+        <option value="month" selected>This month</option><option value="lastmonth">Last month</option>
+        <option value="last30">Last 30 days</option><option value="custom">Custom range</option>
+      </select>
+      <span id="custom" class="custom" hidden>
+        <input type="date" id="from" aria-label="From"><span>to</span><input type="date" id="to" aria-label="To">
+      </span>
+      <button type="button" class="btn-ghost" id="refresh">Refresh</button>
+      <button type="button" class="btn-ghost" id="resetAuto">Reset to system data</button>
+      <span class="status" id="status" role="status">Loading…</span>
+    </div>
 
-      <section class="card">
-        <h2>Costs tied to sales</h2>
-        <p class="hint">These rise and fall with how busy you are.</p>
-        <div class="row"><label for="comm">Barber commission, % of services income</label><input id="comm" class="pct" type="number" min="0" max="100" inputmode="decimal" placeholder="0"></div>
-        <div class="row"><label for="cogs">Cost of products sold (stock bought)</label><input id="cogs" type="number" min="0" inputmode="decimal" placeholder="0"></div>
-        <div class="row"><label for="fee">M-Pesa and card fees, % of total income</label><input id="fee" class="pct" type="number" min="0" max="100" inputmode="decimal" placeholder="0"></div>
-      </section>
+    <div class="layout">
+      <div class="inputs">
+        <section class="panel">
+          <h2>Money in</h2>
+          <p class="hint">Filled from POS sales for the period. Change any figure to test a what-if.</p>
+          <div class="row"><label for="svc">Services</label><input id="svc" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+          <div class="row"><label for="prod">Product sales</label><input id="prod" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+          <div class="row"><label for="oth">Other income</label><input id="oth" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+        </section>
 
-      <section class="card">
-        <h2>Shop expenses</h2>
-        <p class="hint">Rename a row or add your own.</p>
-        <div id="exp"></div>
-        <button type="button" id="add">Add expense</button>
-      </section>
+        <section class="panel">
+          <h2>Costs tied to sales</h2>
+          <p class="hint">Commission and discounts come from your records. Product cost uses each product’s cost price.</p>
+          <div class="row"><label for="disc">Discounts given</label><input id="disc" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+          <div class="row"><label for="comm">Barber commission</label><input id="comm" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+          <div class="row"><label for="cogs">Cost of products sold</label><input id="cogs" type="number" min="0" step="any" inputmode="decimal" placeholder="0"></div>
+          <div class="row"><label for="fee">M-Pesa and card fees, % of income</label><input id="fee" class="pct" type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="0"></div>
+        </section>
 
-      <section class="card">
-        <h2>Tax</h2>
-        <p class="hint">Leave at 0 if you want profit before tax. Enter the rate that applies to your business.</p>
-        <div class="row">
-          <select id="basis" aria-label="Tax basis"><option value="profit">% of profit before tax</option><option value="income">% of total income</option></select>
-          <input id="tax" class="pct" type="number" min="0" max="100" inputmode="decimal" placeholder="0" aria-label="Tax rate percent">
+        <section class="panel">
+          <h2>Shop expenses</h2>
+          <p class="hint">One row per category recorded on the Expenses page. Rename, edit or add rows.</p>
+          <div id="exp"></div>
+          <button type="button" class="btn-ghost" id="add">+ Add expense</button>
+        </section>
+
+        <section class="panel">
+          <h2>Tax</h2>
+          <p class="hint">Leave at 0 to see profit before tax. Enter the rate that applies to your business.</p>
+          <div class="row">
+            <select id="basis" aria-label="Tax basis"><option value="profit">% of profit before tax</option><option value="income">% of total income</option></select>
+            <input id="tax" class="pct" type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="0" aria-label="Tax rate percent">
+          </div>
+        </section>
+      </div>
+
+      <aside class="result" aria-live="polite">
+        <div class="panel">
+          <div class="r-l">Net profit</div>
+          <div class="net" id="net">KES 0</div>
+          <div class="margin" id="margin"></div>
+          <div class="bar" id="bar" aria-hidden="true"></div>
+          <ul class="lines" id="lines"></ul>
+          <p class="warn" id="warn"></p>
         </div>
-      </section>
-    </main>
-  </div>
+      </aside>
+    </div>
+  </main>
 </div>
-
 <script>
 (function(){
-  var DEFAULTS=["Rent","Electricity and water","Salaries","Supplies and cleaning","Licences and permits","Other"];
-  var $=function(id){return document.getElementById(id)};
-  var expEl=$("exp");
+  var API=window.location.origin+'/api', SHOP_ID='11111111-1111-1111-1111-111111111111';
+  var $=function(i){return document.getElementById(i)};
+  var NUM=['svc','prod','oth','disc','comm','cogs'];
+  var expEl=$('exp'), auto={}, loadSeq=0;
   var num=function(v){var n=parseFloat(v);return isFinite(n)&&n>0?n:0};
-  var kes=function(n){var s=Math.abs(Math.round(n)).toLocaleString("en-KE");return (n<0?"−":"")+"KES "+s};
+  var kes=function(n){return (n<0?'\u2212':'')+'KES '+Math.abs(Math.round(n)).toLocaleString('en-KE')};
+  var ymd=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+  var cap=function(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1)};
 
-  function addRow(name){
-    var d=document.createElement("div");d.className="row";
-    var w=document.createElement("div");w.className="nm";
-    var t=document.createElement("input");t.type="text";t.value=name||"";t.placeholder="Expense name";t.setAttribute("aria-label","Expense name");
+  function range(){
+    var t=new Date(), p=$('period').value, f=new Date(t), e=new Date(t);
+    if(p==='week'){f.setDate(t.getDate()-((t.getDay()+6)%7))}
+    else if(p==='month'){f=new Date(t.getFullYear(),t.getMonth(),1)}
+    else if(p==='lastmonth'){f=new Date(t.getFullYear(),t.getMonth()-1,1);e=new Date(t.getFullYear(),t.getMonth(),0)}
+    else if(p==='last30'){f.setDate(t.getDate()-29)}
+    else if(p==='custom'){return {from:$('from').value,to:$('to').value}}
+    return {from:ymd(f),to:ymd(e)};
+  }
+
+  function addRow(name,amount,isAuto){
+    var d=document.createElement('div');d.className='row';
+    var w=document.createElement('div');w.className='nm';
+    var t=document.createElement('input');t.type='text';t.value=name||'';t.placeholder='Expense name';t.setAttribute('aria-label','Expense name');
     w.appendChild(t);
-    var a=document.createElement("input");a.type="number";a.min="0";a.placeholder="0";a.inputMode="decimal";a.className="amt";a.setAttribute("aria-label","Amount");
-    a.addEventListener("input",calc);
-    var x=document.createElement("button");x.type="button";x.className="x";x.textContent="Remove";x.setAttribute("aria-label","Remove expense");
-    x.addEventListener("click",function(){d.remove();calc()});
-    d.appendChild(w);d.appendChild(a);d.appendChild(x);expEl.appendChild(d);
-    return t;
+    var a=document.createElement('input');a.type='number';a.min='0';a.step='any';a.placeholder='0';a.inputMode='decimal';a.className='amt'+(isAuto?' auto':'');a.setAttribute('aria-label','Amount');
+    if(amount)a.value=amount;
+    a.addEventListener('input',function(){a.classList.remove('auto');calc()});
+    var x=document.createElement('button');x.type='button';x.className='x';x.textContent='\u2715';x.setAttribute('aria-label','Remove expense');
+    x.addEventListener('click',function(){d.remove();calc()});
+    d.appendChild(w);d.appendChild(a);d.appendChild(x);expEl.appendChild(d);return t;
   }
 
-  function calc(){
-    var svc=num($("svc").value),prod=num($("prod").value),oth=num($("oth").value);
-    var income=svc+prod+oth;
-    var comm=svc*Math.min(num($("comm").value),100)/100;
-    var cogs=num($("cogs").value);
-    var fees=income*Math.min(num($("fee").value),100)/100;
-    var gross=income-comm-cogs-fees;
-    var opex=0,amts=expEl.querySelectorAll(".amt");
-    for(var i=0;i<amts.length;i++)opex+=num(amts[i].value);
-    var pbt=gross-opex;
-    var rate=Math.min(num($("tax").value),100)/100;
-    var tax=$("basis").value==="income"?income*rate:Math.max(pbt,0)*rate;
-    var net=pbt-tax;
-    var out=comm+cogs+fees+opex+tax;
-
-    var n=$("net");n.textContent=kes(net);n.className="net "+(net<0?"neg":"pos");
-    $("margin").textContent=income>0?"Profit margin "+(net/income*100).toFixed(1)+"% of income":"Profit margin: enter your income to see it";
-
-    var segs=[["Commission",comm,"var(--c1)"],["Products and fees",cogs+fees,"var(--c2)"],["Shop expenses",opex,"var(--c3)"],["Tax",tax,"var(--c4)"],["Profit kept",Math.max(net,0),"var(--profit)"]];
-    var base=Math.max(income,out)||1,bar=$("bar");bar.innerHTML="";
-    segs.forEach(function(s){var e=document.createElement("span");e.style.width=(s[1]/base*100)+"%";e.style.background=s[2];e.title=s[0];bar.appendChild(e)});
-
-    var rows=[["Total income",income,"t"],["Barber commission",-comm,0,segs[0][2]],["Cost of products sold",-cogs,0,segs[1][2]],["M-Pesa and card fees",-fees,0,segs[1][2]],["Gross profit",gross,"t"],["Shop expenses",-opex,0,segs[2][2]],["Profit before tax",pbt,"t"],["Tax",-tax,0,segs[3][2]],["Net profit",net,"t"]];
-    var ul=$("lines");ul.innerHTML="";
-    rows.forEach(function(r){var li=document.createElement("li");if(r[2])li.className="t";
-      var l=document.createElement("span");
-      if(r[3]){var dt=document.createElement("i");dt.className="dot";dt.style.background=r[3];l.appendChild(dt)}
-      l.appendChild(document.createTextNode(r[0]));
-      var v=document.createElement("span");v.textContent=kes(r[1]);
-      li.appendChild(l);li.appendChild(v);ul.appendChild(li)});
-
-    $("warn").textContent=net<0?"You are spending more than you earn. Costs are "+kes(out-income)+" above income for this period.":"";
-  }
-
-  function init(){
-    expEl.innerHTML="";
-    DEFAULTS.forEach(addRow);
-    ["svc","prod","oth","comm","cogs","fee","tax"].forEach(function(id){$(id).value=""});
+  function applyAuto(){
+    NUM.forEach(function(id){
+      var el=$(id);
+      if(id in auto){el.value=auto[id]?Math.round(auto[id]*100)/100:'';el.classList.toggle('auto',!!auto[id])}
+    });
+    expEl.innerHTML='';
+    (auto.expenses||[]).forEach(function(r){addRow(cap(r.category),Math.round(r.total*100)/100,true)});
     calc();
   }
 
-  ["svc","prod","oth","comm","cogs","fee","tax","basis"].forEach(function(id){$(id).addEventListener("input",calc)});
-  $("add").addEventListener("click",function(){addRow("").focus()});
-  $("reset").addEventListener("click",init);
-  init();
+  function setStatus(msg,cls){var s=$('status');s.textContent=msg;s.className='status '+(cls||'')}
+
+  function load(){
+    var r=range(), seq=++loadSeq;
+    if(!r.from||!r.to){setStatus('Pick a start and end date','err');return}
+    setStatus('Loading…');
+    fetch(API+'/reports/profit-breakdown?shop_id='+SHOP_ID+'&from='+r.from+'&to='+r.to)
+      .then(function(res){if(!res.ok)throw new Error('HTTP '+res.status);return res.json()})
+      .then(function(d){
+        if(seq!==loadSeq)return;
+        auto={svc:d.services,prod:d.products,oth:0,disc:d.discounts,comm:d.commissions,cogs:d.product_cost,expenses:d.expenses};
+        applyAuto();
+        setStatus(d.sale_count+' sale'+(d.sale_count===1?'':'s')+' · '+d.from+' to '+d.to,'ok');
+      })
+      .catch(function(){
+        if(seq!==loadSeq)return;
+        setStatus('Could not load system data. You can still type figures in.','err');
+      });
+  }
+
+  function calc(){
+    var svc=num($('svc').value),prod=num($('prod').value),oth=num($('oth').value);
+    var income=svc+prod+oth, disc=num($('disc').value), comm=num($('comm').value), cogs=num($('cogs').value);
+    var fees=income*Math.min(num($('fee').value),100)/100;
+    var gross=income-disc-comm-cogs-fees, opex=0, amts=expEl.querySelectorAll('.amt');
+    for(var i=0;i<amts.length;i++)opex+=num(amts[i].value);
+    var pbt=gross-opex, rate=Math.min(num($('tax').value),100)/100;
+    var tax=$('basis').value==='income'?income*rate:Math.max(pbt,0)*rate;
+    var net=pbt-tax, out=disc+comm+cogs+fees+opex+tax;
+
+    var n=$('net');n.textContent=kes(net);n.className='net'+(net<0?' neg':'');
+    $('margin').textContent=income>0?'Profit margin '+(net/income*100).toFixed(1)+'% of income':'No income in this period yet';
+
+    var C={comm:'#4A74B8',cost:'#B8B3A6',exp:'#E8A33D',tax:'#C8352E',win:'#4E9A63'};
+    var segs=[[disc+comm,C.comm],[cogs+fees,C.cost],[opex,C.exp],[tax,C.tax],[Math.max(net,0),C.win]];
+    var base=Math.max(income,out)||1, bar=$('bar');bar.innerHTML='';
+    segs.forEach(function(s){var e=document.createElement('span');e.style.width=(s[0]/base*100)+'%';e.style.background=s[1];bar.appendChild(e)});
+
+    var rows=[['Total income',income,'t'],['Discounts given',-disc,0,C.comm],['Barber commission',-comm,0,C.comm],['Cost of products sold',-cogs,0,C.cost],['M-Pesa and card fees',-fees,0,C.cost],['Gross profit',gross,'t'],['Shop expenses',-opex,0,C.exp],['Profit before tax',pbt,'t'],['Tax',-tax,0,C.tax],['Net profit',net,'t']];
+    var ul=$('lines');ul.innerHTML='';
+    rows.forEach(function(r){
+      var li=document.createElement('li');if(r[2])li.className='t';
+      var l=document.createElement('span');
+      if(r[3]){var dt=document.createElement('i');dt.className='dot';dt.style.background=r[3];l.appendChild(dt)}
+      l.appendChild(document.createTextNode(r[0]));
+      var v=document.createElement('span');v.textContent=kes(r[1]);
+      li.appendChild(l);li.appendChild(v);ul.appendChild(li);
+    });
+    $('warn').textContent=net<0?'Costs are '+kes(out-income)+' above income for this period.':'';
+  }
+
+  NUM.concat(['fee','tax','basis']).forEach(function(id){
+    $(id).addEventListener('input',function(){this.classList.remove('auto');calc()});
+  });
+  $('period').addEventListener('change',function(){$('custom').hidden=this.value!=='custom';if(this.value!=='custom')load()});
+  $('from').addEventListener('change',load);$('to').addEventListener('change',load);
+  $('refresh').addEventListener('click',load);
+  $('resetAuto').addEventListener('click',function(){if(Object.keys(auto).length)applyAuto();else load()});
+  $('add').addEventListener('click',function(){addRow('','',false).focus()});
+  var td=new Date();$('to').value=ymd(td);$('from').value=ymd(new Date(td.getFullYear(),td.getMonth(),1));
+  calc();load();
 })();
 </script>
 </body>
