@@ -18,7 +18,7 @@ router.get('/products', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load products', detail: err.message });
+    res.status(500).json({ error: 'Failed to load products' });
   }
 });
 
@@ -37,7 +37,7 @@ router.post('/products', async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to add product', detail: err.message });
+    res.status(500).json({ error: 'Failed to add product' });
   }
 });
 
@@ -81,7 +81,7 @@ router.post('/purchases', async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);
-    res.status(500).json({ error: 'Failed to record purchase', detail: err.message });
+    res.status(500).json({ error: 'Failed to record purchase' });
   } finally {
     client.release();
   }
@@ -100,7 +100,7 @@ router.delete('/products/:id', async (req, res) => {
     res.json({ deleted: true, id: rows[0].id });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to delete product', detail: err.message });
+    res.status(500).json({ error: 'Failed to delete product' });
   }
 });
 

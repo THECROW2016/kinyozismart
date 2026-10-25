@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load expenses', detail: err.message });
+    res.status(500).json({ error: 'Failed to load expenses' });
   }
 });
 
@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to add expense', detail: err.message });
+    res.status(500).json({ error: 'Failed to add expense' });
   }
 });
 
@@ -51,7 +51,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ deleted: true, id });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to delete expense', detail: err.message });
+    res.status(500).json({ error: 'Failed to delete expense' });
   }
 });
 

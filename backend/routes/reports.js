@@ -28,7 +28,7 @@ router.get('/sales', async (req, res) => {
     res.json({ from, to, daily: daily.rows, total: Number(totals.rows[0].total), sale_count: Number(totals.rows[0].sale_count) });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load sales report', detail: err.message });
+    res.status(500).json({ error: 'Failed to load sales report' });
   }
 });
 
@@ -50,7 +50,7 @@ router.get('/services', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load services report', detail: err.message });
+    res.status(500).json({ error: 'Failed to load services report' });
   }
 });
 
@@ -72,7 +72,7 @@ router.get('/commissions', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load commissions report', detail: err.message });
+    res.status(500).json({ error: 'Failed to load commissions report' });
   }
 });
 
@@ -101,7 +101,7 @@ router.get('/profit', async (req, res) => {
     res.json({ from, to, revenue: rev, expenses: exp, commissions: comm, profit: rev - exp - comm });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load profit report', detail: err.message });
+    res.status(500).json({ error: 'Failed to load profit report' });
   }
 });
 
@@ -125,7 +125,7 @@ router.get('/customer-growth', async (req, res) => {
     res.json({ from, to, new_customers: Number(newCustomers.rows[0].count), returning_customers: Number(returning.rows[0].count) });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load customer growth report', detail: err.message });
+    res.status(500).json({ error: 'Failed to load customer growth report' });
   }
 });
 
@@ -194,7 +194,7 @@ router.get('/export', async (req, res) => {
     res.json({ from, to, sales: sales.rows, expenses: expenses.rows, commissions: commissions.rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to build export', detail: err.message });
+    res.status(500).json({ error: 'Failed to build export' });
   }
 });
 
@@ -228,7 +228,7 @@ router.get('/attendance', async (req, res) => {
     res.json({ from, to, records: records.rows, totals });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to build attendance report', detail: err.message });
+    res.status(500).json({ error: 'Failed to build attendance report' });
   }
 });
 
@@ -290,7 +290,7 @@ router.get('/staff-sales', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to build staff sales report', detail: err.message });
+    res.status(500).json({ error: 'Failed to build staff sales report' });
   }
 });
 
@@ -343,7 +343,7 @@ router.get('/profit-breakdown', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load profit breakdown', detail: err.message });
+    res.status(500).json({ error: 'Failed to load profit breakdown' });
   }
 });
 

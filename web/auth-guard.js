@@ -15,6 +15,31 @@
     }).catch(() => {});
   }
 
+  // Attach the signed session token to every same-origin /api request
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = function (input, init) {
+    try {
+      const url = typeof input === 'string' ? input : input.url;
+      const u = new URL(url, window.location.origin);
+      if (u.origin === window.location.origin && u.pathname.startsWith('/api/')) {
+        const s = JSON.parse(localStorage.getItem('barberos_session') || 'null');
+        if (s && s.token) {
+          init = Object.assign({}, init);
+          const h = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined));
+          h.set('Authorization', 'Bearer ' + s.token);
+          init.headers = h;
+        }
+      }
+    } catch (e) {}
+    return nativeFetch(input, init).then(function (r) {
+      if (r.status === 401 && !/\/api\/auth\/login/.test(String(typeof input === 'string' ? input : input.url))) {
+        localStorage.removeItem('barberos_session');
+        if (!/login\.html$/.test(window.location.pathname)) window.location.href = 'login.html';
+      }
+      return r;
+    });
+  };
+
   let session = null;
   try { session = JSON.parse(localStorage.getItem('barberos_session') || 'null'); } catch (e) { session = null; }
 

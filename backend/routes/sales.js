@@ -144,7 +144,7 @@ router.post('/', async (req, res) => {
       return res.status(err.statusCode).json({ error: err.message });
     }
     console.error(err);
-    res.status(500).json({ error: 'Failed to record sale', detail: err.message });
+    res.status(500).json({ error: 'Failed to record sale' });
   } finally {
     client.release();
   }
@@ -206,7 +206,7 @@ router.get('/', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load transactions', detail: err.message });
+    res.status(500).json({ error: 'Failed to load transactions' });
   }
 });
 
@@ -282,7 +282,7 @@ router.delete('/:id', async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);
-    res.status(500).json({ error: 'Failed to delete transaction', detail: err.message });
+    res.status(500).json({ error: 'Failed to delete transaction' });
   } finally {
     client.release();
   }

@@ -32,7 +32,7 @@ router.get('/:customerId', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load wallet', detail: err.message });
+    res.status(500).json({ error: 'Failed to load wallet' });
   }
 });
 
@@ -74,7 +74,7 @@ router.post('/:customerId/topup', async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);
-    res.status(500).json({ error: 'Failed to top up wallet', detail: err.message });
+    res.status(500).json({ error: 'Failed to top up wallet' });
   } finally {
     client.release();
   }
