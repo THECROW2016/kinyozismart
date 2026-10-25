@@ -14,6 +14,7 @@ router.get('/shop', async (req, res) => {
 // PATCH /api/settings/shop/:id
 router.patch('/shop/:id', async (req, res) => {
   const { id } = req.params;
+  if (id !== req.user.shop_id) return res.status(403).json({ error: 'Not allowed' });
   let { name, location, phone, opening_time, closing_time, mpesa_till, mpesa_paybill, receipt_footer } = req.body;
   // Empty strings from HTML inputs aren't valid for TIME columns and shouldn't
   // be treated as "clear this field" — normalize to null so COALESCE keeps
@@ -39,7 +40,7 @@ router.patch('/shop/:id', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to update shop', detail: err.message });
+    res.status(500).json({ error: 'Failed to update shop' });
   }
 });
 
@@ -57,7 +58,7 @@ router.post('/services', async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to add service', detail: err.message });
+    res.status(500).json({ error: 'Failed to add service' });
   }
 });
 
@@ -80,7 +81,7 @@ router.patch('/services/:id', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to update service', detail: err.message });
+    res.status(500).json({ error: 'Failed to update service' });
   }
 });
 

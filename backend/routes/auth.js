@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { verifyPin } = require('../utils/pin');
+const { sign } = require('../utils/token');
 
 // In-memory lockout tracking per user_id. Resets on server restart — fine at
 // this scale, and combined with the IP-based rate limiter on this route.
@@ -30,14 +31,14 @@ router.get('/staff', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load staff list', detail: err.message });
+    res.status(500).json({ error: 'Failed to load staff list' });
   }
 });
 
 // POST /api/auth/login  body: { user_id, pin }
 router.post('/login', async (req, res) => {
   const { user_id, pin } = req.body;
-  if (!user_id || !pin) return res.status(400).json({ error: 'user_id and pin are required' });
+  if (typeof user_id !== 'string' || !/^\d{4,12}$/.test(String(pin || ''))) return res.status(400).json({ error: 'user_id and pin are required' });
 
   const attempt = failedAttempts.get(user_id);
   if (attempt && attempt.lockedUntil && attempt.lockedUntil > Date.now()) {
@@ -50,7 +51,7 @@ router.post('/login', async (req, res) => {
       `SELECT id, shop_id, full_name, role, pin_hash FROM users WHERE id = $1 AND is_active = true`,
       [user_id]
     );
-    if (!rows.length) return res.status(404).json({ error: 'User not found' });
+    if (!rows.length) return res.status(401).json({ error: 'Incorrect PIN' });
 
     const user = rows[0];
     // Owner, manager, and secretary accounts can log in. Barbers, beauticians,
@@ -81,11 +82,12 @@ router.post('/login', async (req, res) => {
       id: user.id,
       full_name: user.full_name,
       role: user.role,
-      session_id: session.rows[0].id
+      session_id: session.rows[0].id,
+      token: sign({ id: user.id, shop_id: user.shop_id, role: user.role })
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Login failed', detail: err.message });
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
@@ -101,7 +103,7 @@ router.post('/logout', async (req, res) => {
     res.json({ loggedOut: rows.length > 0 });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Logout failed', detail: err.message });
+    res.status(500).json({ error: 'Logout failed' });
   }
 });
 
@@ -124,7 +126,7 @@ router.get('/sessions', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load login history', detail: err.message });
+    res.status(500).json({ error: 'Failed to load login history' });
   }
 });
 

@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load appointments', detail: err.message });
+    res.status(500).json({ error: 'Failed to load appointments' });
   }
 });
 
@@ -75,7 +75,7 @@ router.post('/', async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);
-    res.status(500).json({ error: 'Failed to create appointment', detail: err.message });
+    res.status(500).json({ error: 'Failed to create appointment' });
   } finally {
     client.release();
   }
@@ -94,7 +94,7 @@ router.patch('/:id/status', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to update appointment', detail: err.message });
+    res.status(500).json({ error: 'Failed to update appointment' });
   }
 });
 
@@ -107,7 +107,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ deleted: true, id });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to delete appointment', detail: err.message });
+    res.status(500).json({ error: 'Failed to delete appointment' });
   }
 });
 

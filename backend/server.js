@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
@@ -18,6 +17,7 @@ const settingsRoutes = require('./routes/settings');
 const authRoutes = require('./routes/auth');
 const walletRoutes = require('./routes/wallet');
 const pool = require('./db');
+const { requireAuth, allow, noSecretaryDelete } = require('./utils/authz');
 
 const app = express();
 app.set('trust proxy', 1); // Railway sits behind a reverse proxy; needed for correct client IPs in rate limiting
@@ -40,8 +40,10 @@ app.use(helmet({
     }
   }
 }));
-app.use(cors());
-app.use(express.json({ limit: '6mb' })); // staff photo uploads are sent as base64 data URLs
+// Frontend is served from the same origin, so no CORS is enabled.
+// Staff photo uploads are base64 data URLs and need a larger body; everything else is small.
+app.use('/api/staff', express.json({ limit: '6mb' }));
+app.use(express.json({ limit: '100kb' }));
 
 // General API rate limit — generous for normal shop use, but caps abuse/scraping
 const apiLimiter = rateLimit({
@@ -63,28 +65,32 @@ const loginLimiter = rateLimit({
 });
 app.use('/api/auth/login', loginLimiter);
 
-// API routes
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/queue', queueRoutes);
-app.use('/api', catalogRoutes); // /api/services, /api/products, /api/barbers, /api/customers
-app.use('/api/sales', salesRoutes);
-app.use('/api/appointments', appointmentsRoutes);
-app.use('/api/staff', staffRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/expenses', expensesRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/wallet', walletRoutes);
-
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', db: 'connected' });
   } catch (err) {
-    res.status(500).json({ status: 'error', db: 'disconnected', detail: err.message });
+    res.status(500).json({ status: 'error', db: 'disconnected' });
   }
 });
+
+// API routes. Login/staff-picker/health are public; everything else needs a
+// signed token, and sensitive areas are restricted by role on the server.
+const OM = allow('owner', 'manager');
+app.use('/api/auth/sessions', requireAuth, OM);
+app.use('/api/dashboard', requireAuth, OM, dashboardRoutes);
+app.use('/api/queue', requireAuth, noSecretaryDelete, queueRoutes);
+app.use('/api/staff', requireAuth, OM, staffRoutes);
+app.use('/api/inventory', requireAuth, OM, inventoryRoutes);
+app.use('/api/expenses', requireAuth, OM, expensesRoutes);
+app.use('/api/reports', requireAuth, OM, reportsRoutes);
+app.use('/api/settings', requireAuth, (req, res, next) =>
+  req.method === 'GET' && req.path === '/shop' ? next() : allow('owner')(req, res, next), settingsRoutes);
+app.use('/api/sales', requireAuth, noSecretaryDelete, salesRoutes);
+app.use('/api/appointments', requireAuth, noSecretaryDelete, appointmentsRoutes);
+app.use('/api/wallet', requireAuth, walletRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api', requireAuth, catalogRoutes); // /api/services, /api/products, /api/barbers, /api/customers
 
 // Serve the static frontend (dashboard/pos/queue) from ../web
 app.use(express.static(path.join(__dirname, '..', 'web')));

@@ -3,6 +3,10 @@ const router = express.Router();
 const pool = require('../db');
 const { hashPin } = require('../utils/pin');
 
+// Photos must be inline image data or plain http(s) URLs (no javascript: etc.)
+const validPhoto = (u) => u === undefined || u === null || u === '' ||
+  /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+\/=]+$/.test(u) || /^https?:\/\//i.test(u);
+
 // GET /api/staff?shop_id=... -> all staff (any role), with barber-specific
 // performance/commission/attendance data where applicable
 router.get('/', async (req, res) => {
@@ -55,7 +59,7 @@ router.get('/', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load staff', detail: err.message });
+    res.status(500).json({ error: 'Failed to load staff' });
   }
 });
 
@@ -66,6 +70,7 @@ router.get('/', async (req, res) => {
 // body: { shop_id, full_name, phone, role, pin?, photo_url?, specialties?: string[], commission_rate? }
 router.post('/', async (req, res) => {
   const { shop_id, full_name, phone, role, pin, photo_url, specialties, commission_rate } = req.body;
+  if (!validPhoto(photo_url)) return res.status(400).json({ error: 'Invalid photo' });
   const allowedRoles = ['barber', 'beautician', 'receptionist', 'manager', 'secretary'];
   const loginRoles = ['manager', 'secretary'];
   const providerRoles = ['barber', 'beautician']; // get a row in the barbers table (performance/commission tracking)
@@ -105,7 +110,7 @@ router.post('/', async (req, res) => {
     if (err.code === '23505') { // unique_violation on (shop_id, phone)
       return res.status(409).json({ error: 'A staff member with this phone number already exists' });
     }
-    res.status(500).json({ error: 'Failed to register staff', detail: err.message });
+    res.status(500).json({ error: 'Failed to register staff' });
   } finally {
     client.release();
   }
@@ -115,6 +120,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
   const { full_name, phone, photo_url, commission_rate, specialties, is_active } = req.body;
+  if (!validPhoto(photo_url)) return res.status(400).json({ error: 'Invalid photo' });
   try {
     const userUpdate = await pool.query(
       `UPDATE users SET
@@ -140,7 +146,7 @@ router.patch('/:id', async (req, res) => {
     res.json(userUpdate.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to update staff', detail: err.message });
+    res.status(500).json({ error: 'Failed to update staff' });
   }
 });
 
@@ -157,7 +163,7 @@ router.post('/:id/clock-in', async (req, res) => {
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to clock in', detail: err.message });
+    res.status(500).json({ error: 'Failed to clock in' });
   }
 });
 
@@ -175,7 +181,7 @@ router.post('/:id/clock-out', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to clock out', detail: err.message });
+    res.status(500).json({ error: 'Failed to clock out' });
   }
 });
 
@@ -193,7 +199,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ deleted: true, id: rows[0].id });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to remove staff member', detail: err.message });
+    res.status(500).json({ error: 'Failed to remove staff member' });
   }
 });
 

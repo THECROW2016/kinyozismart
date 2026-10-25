@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to load queue', detail: err.message });
+    res.status(500).json({ error: 'Failed to load queue' });
   }
 });
 
@@ -86,7 +86,7 @@ router.post('/', async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);
-    res.status(500).json({ error: 'Failed to add walk-in', detail: err.message });
+    res.status(500).json({ error: 'Failed to add walk-in' });
   } finally {
     client.release();
   }
@@ -106,7 +106,7 @@ router.patch('/:id/call', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to call customer', detail: err.message });
+    res.status(500).json({ error: 'Failed to call customer' });
   }
 });
 
@@ -122,7 +122,7 @@ router.patch('/:id/start', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to start service', detail: err.message });
+    res.status(500).json({ error: 'Failed to start service' });
   }
 });
 
@@ -139,7 +139,7 @@ router.patch('/:id/complete', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to complete queue entry', detail: err.message });
+    res.status(500).json({ error: 'Failed to complete queue entry' });
   }
 });
 
